@@ -4,13 +4,17 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.kie</groupId>
-		<artifactId>kie-spring-boot-samples</artifactId>
-		<version>7.6.0.FINAL</version>
+		<artifactId>kie-spring-boot</artifactId>
+		<version>7.15.0.Final</version>
 	</parent>
 	<artifactId>kie-client-spring-boot-sample</artifactId>
 
 	<name>KIE Client :: Spring :: Boot :: Sample</name>
 	<description>KIE Client SpringBoot Sample (Use all KIE Server capabilities)</description>
+
+	<properties>
+		<start-class>org.kie.server.springboot.samples.KieClientApplication</start-class>
+	</properties>
 
 	<dependencies>
 
@@ -39,6 +43,12 @@
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
+			<exclusions>
+				<exclusion>
+					<artifactId>commons-logging</artifactId>
+					<groupId>commons-logging</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
