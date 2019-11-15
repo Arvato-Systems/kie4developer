@@ -1,4 +1,4 @@
-package org.kie.server.springboot.samples.client.workitemhandler;
+package org.kie.client.springboot.samples.client.workitemhandler;
 
 import java.util.HashMap;
 import java.util.Map;

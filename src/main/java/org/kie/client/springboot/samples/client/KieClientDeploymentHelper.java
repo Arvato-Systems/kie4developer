@@ -1,4 +1,4 @@
-package org.kie.server.springboot.samples.client;
+package org.kie.client.springboot.samples.client;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -35,9 +35,9 @@ import org.kie.api.io.Resource;
 import org.kie.server.api.model.KieContainerResource;
 import org.kie.server.api.model.KieServiceResponse.ResponseType;
 import org.kie.server.api.model.ServiceResponse;
-import org.kie.server.springboot.samples.common.interfaces.IDeployableBPMNProcess;
-import org.kie.server.springboot.samples.common.interfaces.IDeploymentHelper;
-import org.kie.server.springboot.samples.common.interfaces.IRelease;
+import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
+import org.kie.client.springboot.samples.common.interfaces.IDeploymentHelper;
+import org.kie.client.springboot.samples.common.interfaces.IRelease;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

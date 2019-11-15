@@ -1,4 +1,4 @@
-package org.kie.server.springboot.samples.client.processes;
+package org.kie.client.springboot.samples.client.processes;
 
 import java.io.*;
 import java.util.Collections;
@@ -8,8 +8,8 @@ import java.util.zip.ZipInputStream;
 
 import org.kie.api.io.Resource;
 import org.kie.api.runtime.process.WorkItemHandler;
+import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
 import org.kie.internal.io.ResourceFactory;
-import org.kie.server.springboot.samples.common.interfaces.IDeployableBPMNProcess;
 
 /**
  * This is a sample {@link ProcessDefinition} that is based on a bpmn inside a kjar archive

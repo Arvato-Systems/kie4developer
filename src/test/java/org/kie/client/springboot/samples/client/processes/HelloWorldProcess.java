@@ -1,4 +1,4 @@
-package org.kie.server.springboot.samples.client.processes;
+package org.kie.client.springboot.samples.client.processes;
 
 import java.io.File;
 import java.util.HashMap;
@@ -8,9 +8,9 @@ import org.jbpm.ruleflow.core.RuleFlowProcess;
 import org.jbpm.ruleflow.core.RuleFlowProcessFactory;
 import org.kie.api.io.Resource;
 import org.kie.api.runtime.process.WorkItemHandler;
+import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
 import org.kie.internal.io.ResourceFactory;
-import org.kie.server.springboot.samples.client.workitemhandler.HelloWorldWorkItemHandler;
-import org.kie.server.springboot.samples.common.interfaces.IDeployableBPMNProcess;
+import org.kie.client.springboot.samples.client.workitemhandler.HelloWorldWorkItemHandler;
 
 /**
  * This is a sample {@link ProcessDefinition} that is based on a bpmn that is build by the jbpm fluent api ({@link RuleFlowProcessFactory})

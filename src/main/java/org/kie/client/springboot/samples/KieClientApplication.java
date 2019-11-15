@@ -1,4 +1,4 @@
-package org.kie.server.springboot.samples;
+package org.kie.client.springboot.samples;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

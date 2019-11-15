@@ -1,11 +1,11 @@
-package org.kie.server.springboot.samples.client;
+package org.kie.client.springboot.samples.client;
 
 import java.util.List;
 import java.util.Map;
 
 import org.kie.server.api.model.instance.TaskSummary;
-import org.kie.server.springboot.samples.common.interfaces.IExecutionHelper;
-import org.kie.server.springboot.samples.common.interfaces.IRelease;
+import org.kie.client.springboot.samples.common.interfaces.IExecutionHelper;
+import org.kie.client.springboot.samples.common.interfaces.IRelease;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

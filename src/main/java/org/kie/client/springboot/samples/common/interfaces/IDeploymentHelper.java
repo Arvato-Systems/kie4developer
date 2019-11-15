@@ -1,7 +1,5 @@
-package org.kie.server.springboot.samples.common.interfaces;
+package org.kie.client.springboot.samples.common.interfaces;
 
-import org.kie.server.springboot.samples.common.interfaces.IDeployableBPMNProcess;
-import org.kie.server.springboot.samples.common.interfaces.IRelease;
 import org.springframework.stereotype.Component;
 
 /**

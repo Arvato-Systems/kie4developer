@@ -1,4 +1,4 @@
-package org.kie.server.springboot.samples.client;
+package org.kie.client.springboot.samples.client;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;

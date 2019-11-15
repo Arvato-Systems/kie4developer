@@ -1,8 +1,8 @@
-package org.kie.server.springboot.samples.common;
+package org.kie.client.springboot.samples.common;
 
 import org.kie.api.KieServices;
 import org.kie.server.api.model.ReleaseId;
-import org.kie.server.springboot.samples.common.interfaces.IRelease;
+import org.kie.client.springboot.samples.common.interfaces.IRelease;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 

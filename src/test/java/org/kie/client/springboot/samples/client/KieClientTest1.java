@@ -1,4 +1,4 @@
-package org.kie.server.springboot.samples.client;
+package org.kie.client.springboot.samples.client;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,24 +10,17 @@ import org.kie.server.api.model.KieContainerResource;
 import org.kie.server.api.model.KieContainerResourceList;
 import org.kie.server.api.model.definition.ProcessDefinition;
 import org.kie.server.api.model.instance.ProcessInstance;
-import org.kie.server.springboot.samples.client.processes.EvaluationProcess;
-import org.kie.server.springboot.samples.client.processes.HelloWorldProcess;
-import org.kie.server.springboot.samples.common.interfaces.IDeployableBPMNProcess;
+import org.kie.client.springboot.samples.client.processes.HelloWorldProcess;
+import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(
-		properties = {
-				// this has to match with the pom.xml in the kjar file
-				"spring.application.groupid=evaluation",
-				"spring.application.name=evaluation",
-				"spring.application.version=1.0"
-		})
-public class KieClientTest2 {
+@SpringBootTest
+public class KieClientTest1 {
 
-	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(KieClientTest2.class);
+	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(KieClientTest1.class);
 
 	@Autowired
 	private KieClient kieClient;
@@ -36,19 +29,19 @@ public class KieClientTest2 {
 	@Autowired
 	private KieClientExecutionHelper clientExecutionHelper;
 
-    /**
-     * Run a series of client tests
-     * 1. create a new process
-     * 2. deploy a the process to the server
-     * 3. execute the process
-     * 4. show some useful information from the server
-     */
-    @Test
-		public void testDeployableBPMNProcessAsKjar() {
+	/**
+	 * Run a series of client tests
+	 * 1. create a new process
+	 * 2. deploy a the process to the server
+	 * 3. execute the process
+	 * 4. show some useful information from the server
+	 */
+	@Test
+	public void testDeployableBPMNProcessAsClass() {
 		// 1. create a new process
-		IDeployableBPMNProcess processToDeploy = new EvaluationProcess();
+		IDeployableBPMNProcess processToDeploy = new HelloWorldProcess();
 
-    // 2. deploy a the process to the server
+		// 2. deploy a the process to the server
 		clientDeploymentHelper.setProcessToDeploy(processToDeploy);
 		clientDeploymentHelper.deploy();
 

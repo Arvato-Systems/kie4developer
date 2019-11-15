@@ -1,4 +1,4 @@
-package org.kie.server.springboot.samples.common.interfaces;
+package org.kie.client.springboot.samples.common.interfaces;
 
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.springframework.stereotype.Component;

@@ -1,10 +1,9 @@
-package org.kie.server.springboot.samples.common.interfaces;
+package org.kie.client.springboot.samples.common.interfaces;
 
 import java.io.File;
 import java.util.HashMap;
 import org.kie.api.io.Resource;
 import org.kie.api.runtime.process.WorkItemHandler;
-import org.kie.server.springboot.samples.common.interfaces.IRelease;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

@@ -1,4 +1,4 @@
-package org.kie.server.springboot.samples.common.interfaces;
+package org.kie.client.springboot.samples.common.interfaces;
 
 import java.io.File;
 import org.springframework.stereotype.Component;

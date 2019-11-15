@@ -1,4 +1,4 @@
-package org.kie.server.springboot.samples.client;
+package org.kie.client.springboot.samples.client;
 
 import org.kie.server.api.marshalling.MarshallingFormat;
 import org.kie.server.client.DocumentServicesClient;

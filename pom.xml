@@ -13,7 +13,7 @@
 	<description>KIE Client SpringBoot Sample (Use all KIE Server capabilities)</description>
 
 	<properties>
-		<start-class>org.kie.server.springboot.samples.KieClientApplication</start-class>
+		<start-class>org.kie.client.springboot.samples.KieClientApplication</start-class>
 	</properties>
 
 	<dependencies>
