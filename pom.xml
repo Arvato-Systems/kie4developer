@@ -35,11 +35,10 @@
 			<groupId>org.jbpm</groupId>
 			<artifactId>jbpm-bpmn2</artifactId>
 		</dependency>
-		<dependency>
+		<!--<dependency>
 			<groupId>org.kie.soup</groupId>
 			<artifactId>kie-soup-maven-integration</artifactId>
-		</dependency>
-
+		</dependency>-->
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
@@ -55,18 +54,11 @@
 			<artifactId>httpmime</artifactId>
 		</dependency>
 
-
 		<!-- test dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
-			<!--<exclusions>
-				<exclusion>
-					<groupId>net.minidev</groupId>
-					<artifactId>accessors-smart</artifactId>
-				</exclusion>
-			</exclusions>-->
 		</dependency>
 
 	</dependencies>

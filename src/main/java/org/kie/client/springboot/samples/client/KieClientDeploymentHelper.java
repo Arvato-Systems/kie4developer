@@ -150,6 +150,8 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 		// Copy the jar into the kie-server's maven repo folder: docker cp ...
 		// extend the maven settings.xml on the kie-server to fetch artifacts from other repositories
 
+		// TODO: refactor this: use Spring REST Template and remove the org.apache.httpcomponents dependencies
+
 		//Maven coordinates
 		String groupId = getRelease().getGroupId();
 		String artifactId = getRelease().getArtifactId();
