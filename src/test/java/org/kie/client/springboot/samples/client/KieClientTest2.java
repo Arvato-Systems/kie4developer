@@ -18,6 +18,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(
+		//TODO: refactor this to be able to support deployment of multiple kie projects
 		properties = {
 				// this has to match with the pom.xml in the kjar file
 				"spring.application.groupid=evaluation",
@@ -92,9 +93,9 @@ public class KieClientTest2 {
         if (processes != null) {
         	for (ProcessDefinition process : processes) {
 						log.info("\t######### Found process definition: " + process.getId());
-                // get details of process definition
-//              ProcessDefinition definition = processClient.getProcessDefinition(containerId, process.getId());
-//              System.out.println("\t######### Definition details: " + definition);
+              // get details of process definition
+              ProcessDefinition definition = kieClient.getProcessClient().getProcessDefinition(containerId, process.getId());
+              System.out.println("\t######### Definition details: " + definition);
            }
         }
         return processes;
@@ -106,10 +107,10 @@ public class KieClientTest2 {
         if (activeInstances != null) {
             for (ProcessInstance instance : activeInstances) {
 							log.info("\t######### Found process instance: " + instance.getId());
-//            	Map<String, Object> variables = processClient.getProcessInstanceVariables(instance.getContainerId(), instance.getId());
-//              System.out.println("\t######### Process instance variables: " + variables);
-//            	processClient.setProcessVariables(instance.getContainerId(), instance.getId(), variables);
-//              System.out.println("\t######### Process instance variables changed: " + variables);
+            	Map<String, Object> variables =  kieClient.getProcessClient().getProcessInstanceVariables(instance.getContainerId(), instance.getId());
+              System.out.println("\t######### Process instance variables: " + variables);
+							kieClient.getProcessClient().setProcessVariables(instance.getContainerId(), instance.getId(), variables);
+              System.out.println("\t######### Process instance variables changed: " + variables);
             }
         }
         return activeInstances;
