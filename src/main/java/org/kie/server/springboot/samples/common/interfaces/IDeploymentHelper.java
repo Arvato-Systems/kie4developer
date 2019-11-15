@@ -1,10 +1,13 @@
 package org.kie.server.springboot.samples.common.interfaces;
 
+import org.kie.server.springboot.samples.common.interfaces.IDeployableBPMNProcess;
+import org.kie.server.springboot.samples.common.interfaces.IRelease;
 import org.springframework.stereotype.Component;
 
 /**
- * Helper to handle Deployments for the JBPM Server.
- * For a deployment to a JBPM Server you need one (runtime) Container. Into this Container you can deploy a DeploymentUnit. A DeploymentUnit contains one ore more Process Definitions. Each Process Definition contains a (XML) BPMN Process.
+ * Helper Interface to handle Deployments for the JBPM Server.
+ * For a deployment to a JBPM Server you need one (runtime) Container. Into this Container you can deploy a DeploymentUnit.
+ * A DeploymentUnit contains one ore more Process Definitions. Each Process Definition contains a (XML) BPMN Process.
  * @author TRIBE01
  */
 @Component
@@ -20,11 +23,11 @@ public interface IDeploymentHelper {
 	 * Define the Process(es) you want to deploy on the Server
 	 * @param processToDeploy process to deploy
 	 */
-	public void setProcessToDeploy(IDeployableBPMNProcess processToDeploy); //TODO: make it possible to deploy multiple processes
+	public void setProcessToDeploy(
+			IDeployableBPMNProcess processToDeploy); //TODO: make it possible to deploy multiple processes
 
 	/**
 	 * Deploy all given Processes into the Server Container
-	 * This include packing as kjar, upload and container creation
 	 */
 	public boolean deploy();
 

@@ -1,12 +1,15 @@
 package org.kie.server.springboot.samples.common.interfaces;
 
 import java.io.File;
+import java.util.HashMap;
 import org.kie.api.io.Resource;
+import org.kie.api.runtime.process.WorkItemHandler;
+import org.kie.server.springboot.samples.common.interfaces.IRelease;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Interface to define a new Process
+ * Interface to define a new BPMN Process
  * @author TRIBE01
  */
 @Component
@@ -14,9 +17,9 @@ public interface IDeployableBPMNProcess {
 
 	@Autowired
 	IRelease release = null;
-	
+
 	/**
-	 * get the name of the Process
+	 * Get the name of the Process
 	 * @return the name
 	 */
 	default String getName() {
@@ -24,7 +27,7 @@ public interface IDeployableBPMNProcess {
 	}
 
 	/**
-	 * get the package of the Process
+	 * Get the package of the Process
 	 * @return the package
 	 */
 	default String getPackage() {
@@ -32,13 +35,13 @@ public interface IDeployableBPMNProcess {
 	}
 
 	/**
-	 * get the version of the process
+	 * Get the version of the process
 	 * @return the version number
 	 */
 	String getVersion();
 
 	/**
-	 * get the unique process id for the process
+	 * Get the unique process id for the process
 	 * @return the process id in the form <code>package:name:version</code>
 	 */
 	default String getProcessId() {
@@ -46,7 +49,7 @@ public interface IDeployableBPMNProcess {
 	}
 
 	/**
-	 * check if the process is distributed as jar (true) or as in in-memory file (false)
+	 * Check if the process is distributed as jar (true) or as in in-memory file (false)
 	 * if distributed as jar {@link #getJarFile()} and {@link #getPomFile()} can be used to retrieve the process.
 	 * if distributed as in-memory file {@link #getBPMNModel()} can be used to retrieve the process.
 	 * @return true if process files were provided as jar file
@@ -54,19 +57,31 @@ public interface IDeployableBPMNProcess {
 	boolean isDistributedAsJar();
 
 	/**
-	 * get the BPMN Process Model that can be used for deployment
+	 * Check if the process needs workitemhandlers
+	 * @return true if workitemhandler are required for the process
+	 */
+	boolean hasWorkItemHandler();
+
+	/**
+	 * Get the list of workitemhandlers for the process
+	 * @return the list of workitemhandlers
+	 */
+	HashMap<String,WorkItemHandler> getWorkItemHandlers();
+
+	/**
+	 * Get the BPMN Process Model that can be used for deployment
 	 * @return the BPM Process Definition
 	 */
 	Resource getBPMNModel();
 
 	/**
-	 * get the jar file that contains the BPMN Process Model
+	 * Get the jar file that contains the BPMN Process Model
 	 * @return the .jar file
 	 */
 	File getJarFile();
 
 	/**
-	 * get the pom file for the BPMN Process Model
+	 * Get the pom file for the BPMN Process Model
 	 * @return the .pom file
 	 */
 	File getPomFile();

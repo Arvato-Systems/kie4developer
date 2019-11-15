@@ -38,14 +38,17 @@ import org.kie.server.api.model.ServiceResponse;
 import org.kie.server.springboot.samples.common.interfaces.IDeployableBPMNProcess;
 import org.kie.server.springboot.samples.common.interfaces.IDeploymentHelper;
 import org.kie.server.springboot.samples.common.interfaces.IRelease;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 @Component
 public class KieClientDeploymentHelper implements IDeploymentHelper {
 
-	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(KieClientDeploymentHelper.class);
-  private IDeployableBPMNProcess processToDeploy;
+	private static final Logger LOGGER = LoggerFactory.getLogger(KieClientDeploymentHelper.class);
+	private IDeployableBPMNProcess processToDeploy;
   @Autowired
   private KieClient kieClient;
   @Autowired
@@ -65,6 +68,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 	private String workbenchUser;
 	@Value("${kieworkbench.pwd}")
 	private String workbenchPassword;
+
 
 	@Override
 	public IRelease getRelease() {
@@ -87,10 +91,10 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 		KieContainerResource resource = new KieContainerResource(containerId, releaseId);
 		ServiceResponse<KieContainerResource> createResponse = kieClient.getKieServicesClient().createContainer(containerId, resource);
 		if (createResponse.getType() == ResponseType.FAILURE) {
-			log.error("Error creating " + containerId + ". Message: " + createResponse.getMsg());
+			LOGGER.error("Error creating " + containerId + ". Message: " + createResponse.getMsg());
 			return false;
 		}else{
-			log.info("Container " +  containerId +  " for release " + releaseId + " successful created.");
+			LOGGER.info("Container " +  containerId +  " for release " + releaseId + " successful created.");
 		}
 		return true;
   }
@@ -114,7 +118,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 			kfs.generateAndWritePomXML(releaseId);
 			KieBuilder builder = ks.newKieBuilder(kfs).buildAll();
 			if (builder.getResults().hasMessages(Message.Level.ERROR)) {
-				log.error("Process compilation error: " + builder.getResults().getMessages().toString());
+				LOGGER.error("Process compilation error: " + builder.getResults().getMessages().toString());
 				throw new RuntimeException("Process compilation error: " + builder.getResults().getMessages().toString());
 			}
 			InternalKieModule kieModule = (InternalKieModule) ks.getRepository().getKieModule(releaseId);
@@ -134,7 +138,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 			} catch (IOException e) {
 				throw new RuntimeException("Kjar write error", e);
 			}
-			log.info("Kjar created successfull: "+ jarFile.getAbsolutePath());
+			LOGGER.info("Kjar created successfull: "+ jarFile.getAbsolutePath());
 		}
 
 		// There exist multiple ways to make the kjar artifact available for the kie-server. In most of the cases the artifact gets fetched from the related workbench setup.
@@ -178,12 +182,12 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 		try {
 			//Perform the HTTP POST
 			CloseableHttpResponse response = httpclient.execute(target, httpPost, localContext);
-			log.info("Jar file " + jarFile.getName() + " successful uploaded into workbench");
+			LOGGER.info("Jar file " + jarFile.getName() + " successful uploaded into workbench");
 		} catch (ClientProtocolException e) {
-			log.error("Protocol Error while jar file upload", e);
+			LOGGER.error("Protocol Error while jar file upload", e);
 			throw new RuntimeException(e);
 		} catch (IOException e) {
-			log.error("IOException while while jar file upload", e);
+			LOGGER.error("IOException while while jar file upload", e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -195,10 +199,10 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 		if (container != null) {
 			ServiceResponse<Void> responseDispose = kieClient.getKieServicesClient().disposeContainer(containerId);
 			if (responseDispose.getType() == ResponseType.FAILURE) {
-				log.error("Error disposing " + containerId + ". Message: " + responseDispose.getMsg());
+				LOGGER.error("Error disposing " + containerId + ". Message: " + responseDispose.getMsg());
 				return false;
 			} else {
-				log.info("Container disposed: " + containerId + ". ");
+				LOGGER.info("Container disposed: " + containerId + ". ");
 				undeployJarIfExist();
 			}
 			return true;
@@ -211,7 +215,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 	 */
 	private void undeployJarIfExist() {
 		if (processToDeploy.isDistributedAsJar()){
-			// TODO impl. this
+			// removing jars from the server repo isn't possible
 		}
 	}
 

@@ -41,7 +41,7 @@ public class KieClient {
 	private UserTaskAdminServicesClient userTaskAdminClient;
     
     
-    /**
+	/**
 	 * Connect to the specified Kie Server
 	 */
 	private void connectToServer() {

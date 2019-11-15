@@ -17,9 +17,9 @@ public class KieClientExecutionHelper implements IExecutionHelper<TaskSummary> {
 	@Autowired
 	private KieClient kieClient;
 
-	// attention: deploymentId has to be the containerId for deployment via REST Client
 	@Override
 	public Long startNewProcessInstance(String deploymentId, String processId, Map<String, Object> params) {
+		// attention: deploymentId has to be the containerId for deployment via REST Client
 		return kieClient.getProcessClient().startProcess(deploymentId, processId, params);
 	}
 

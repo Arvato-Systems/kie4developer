@@ -27,28 +27,31 @@ public class Release implements IRelease{
 
 
 	/**
-	 * get the group id for the release
+	 * Get the group id for the release
+	 * @return the group id
 	 */
 	public String getGroupId() {
 		return groupId;
 	}
 
 	/**
-	 * get the artifact id for the release
+	 * Get the artifact id for the release
+	 * @return the artifact id
 	 */
 	public String getArtifactId() {
 		return artifactId;
 	}
 
 	/**
-	 * get the version for the release
+	 * Get the version for the release
+	 * @return the version number
 	 */
 	public String getVersion() {
 		return version;
 	}
 
 	/**
-	 * get the container Id
+	 * Get the container Id
 	 * @return the container id
 	 */
 	public String getContainerId() {
@@ -56,7 +59,7 @@ public class Release implements IRelease{
 	}
 
 	/**
-	 * get the unique release id
+	 * Get the unique release id
 	 * @return release id
 	 */
 	public org.kie.server.api.model.ReleaseId getReleaseIdForServerAPI() {
@@ -64,10 +67,11 @@ public class Release implements IRelease{
 	}
 
 	/**
-	 * get the unique release id
+	 * Get the unique release id
 	 * @return release id
 	 */
 	public org.kie.api.builder.ReleaseId getReleaseIdForClientAPI() {
 		return KieServices.Factory.get().newReleaseId(getGroupId(), getArtifactId(), getVersion());
 	}
+
 }
