@@ -1,15 +1,15 @@
 package org.kie.server.springboot.samples.client.processes;
 
 import java.io.File;
+import java.util.HashMap;
 import org.jbpm.bpmn2.xml.XmlBPMNProcessDumper;
 import org.jbpm.process.core.datatype.impl.type.StringDataType;
-import org.jbpm.process.instance.impl.Action;
-import org.jbpm.process.instance.impl.JavaScriptAction;
 import org.jbpm.ruleflow.core.RuleFlowProcess;
 import org.jbpm.ruleflow.core.RuleFlowProcessFactory;
 import org.kie.api.io.Resource;
-import org.kie.api.runtime.process.ProcessContext;
+import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.internal.io.ResourceFactory;
+import org.kie.server.springboot.samples.client.workitemhandler.HelloWorldWorkItemHandler;
 import org.kie.server.springboot.samples.common.interfaces.IDeployableBPMNProcess;
 
 /**
@@ -19,6 +19,8 @@ import org.kie.server.springboot.samples.common.interfaces.IDeployableBPMNProces
 public class HelloWorldProcess implements IDeployableBPMNProcess {
 
 	private final String VERSION = "1.0.0";
+	private final boolean IS_JAR = false;
+	private final boolean USE_WORKITEMHANDLERS = true;
 
 	@Override
 	public String getVersion() {
@@ -27,64 +29,66 @@ public class HelloWorldProcess implements IDeployableBPMNProcess {
 
 	@Override
 	public boolean isDistributedAsJar() {
-		return false;
+		return IS_JAR;
+	}
+
+	@Override
+	public boolean hasWorkItemHandler() {
+		return USE_WORKITEMHANDLERS;
+	}
+
+	@Override
+	public HashMap<String,WorkItemHandler> getWorkItemHandlers() {
+		HashMap<String,WorkItemHandler> workitemhandler = new HashMap<>();
+		workitemhandler.put(HelloWorldWorkItemHandler.NAME, new HelloWorldWorkItemHandler());
+		return workitemhandler;
 	}
 
 	@Override
 	public Resource getBPMNModel() {
-
 		RuleFlowProcessFactory factory = RuleFlowProcessFactory.createProcess(getProcessId());
-
-		final String ENV_environment = "dev";
-		final String ENV_helloworldtext = "Hello World";
-
 		factory
-			// header
+				// header
 				.name(getName())
 				.version("1.0.0")
 				.packageName(getPackage())
-			// environment variables
-				//TODO: seems that we can use here only classes?
-//			.global("environment", ENV_environment)
-//			.global("helloworldtext", ENV_helloworldtext)
-			// process variables
-			.variable("myvar", new StringDataType() ,"default value","ItemSubjectRef", "_" + "myvar")
-			// nodes
-			.startNode(1).name("Start").done()
-			.actionNode(2).name("Java Action 1")
+				// environment variables ... but folks suggest to not use them
+				.global("environment", "org.kie.server.springboot.samples.server.globals.EnvironmentGlobal")
+				// process variables
+				.variable("myvar", new StringDataType(),"default value","ItemSubjectRef", "_" + "myvar")
+				// nodes
+				.startNode(1).name("Start").done()
+				.actionNode(2).name("Java Action 1")
 				.action("java","System.out.println(\"Hello Java Sourcecode!\");").done()
-			.actionNode(3).name("Java Action 2")
-				.action("java","System.out.println(\"Hello \" + kcontext.getVariable(\"employee\") + \" \" + kcontext.getVariable(\"myvar\"));").done()
-			.actionNode(4).name("Java Action 3")
-			//TODO: check why this action doesn'nt work
-				.action(new Action()  {
-							@Override
-							public void execute(ProcessContext context) throws Exception {
-									System.out.println("test " + context);
-							}
-						}
-				).done()
-			.actionNode(5).name("Java Script Action 1")
-				//TODO: check why this action doesn'nt work
-				.action(new JavaScriptAction("console.log(\"Reached Java Script Action 1!\");")).done()
-			//TODO: check why this workitemhandler doesn'nt work
-			/*.workItemNode(6).name("Work Item 1")
-				.inMapping("employee","employee")
-				.outMapping("employee","employee")
-				.workName("Log")
-				.workParameterDefinition("Message", new StringDataType())
-				.workParameter("Message", "#{employee}").done()*/
-			.humanTaskNode(7).name("Human Task 1").actorId("john").taskName("John's Task").done()
-			.endNode(8).name("End").done()
-			// connections
-			.connection(1,2)
-			.connection(2,3)
-			.connection(3,4)
-			.connection(4,5)
-			.connection(5,7)
-			.connection(7,8);
+				.actionNode(3).name("Java Action 2")
+				.action("java","System.out.println(\"Hello \" + kcontext.getVariable(\"employee\") + \" \" + kcontext.getVariable(\"myvar\") + \" \" + kcontext.getVariable(\"environment\"));").done()
+				// javascript seems not to work...
+				//	.actionNode(4).name("Java Script Action 1")
+				//	.action(new JavaScriptAction("print('Reached Java Script Action 1!');")).done()
+				//.actionNode(4).name("Javascript Action 2")
+				//	.action("javascript","print('Reached Java Script Action 2!');").done()
+				.actionNode(4).name("Java Action end")
+				.action("java","kcontext.setVariable(\"myvar\", \"Bonjour\");").done()
+				.workItemNode(5).name("Work Item 1")
+				.workName("HelloWorldWorkItemHandler")
+				//.workParameter("helloworldtext", "Hello") // this can be used to provide constants
+				//.workParameter("helloworldtext", "#{myvar}") // this can be used as alternative to inMapping
+				.inMapping("helloworldtext", "myvar") // optional
+				.outMapping("result","myvar") // optional
+				.done()
+				.actionNode(6).name("Java Action end")
+				.action("java","System.out.println(kcontext.getVariable(\"myvar\"));").done()
+				.humanTaskNode(7).name("Human Task 1").actorId("john").taskName("John's Task").done()
+				.endNode(8).name("End").done()
+				// connections
+				.connection(1,2)
+				.connection(2,3)
+				.connection(3,4)
+				.connection(4,5)
+				.connection(5,6)
+				.connection(6,7)
+				.connection(7,8);
 		RuleFlowProcess process = factory.validate().getProcess();
-
 		Resource res = ResourceFactory.newByteArrayResource(XmlBPMNProcessDumper.INSTANCE.dump(process).getBytes());
 		res.setSourcePath(getProcessId()+".bpmn2"); // source path or target path must be set to be added into kbase
 		return res;

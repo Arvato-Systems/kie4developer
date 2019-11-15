@@ -22,10 +22,10 @@ public class KIEClientApplicationTests {
     assertNotNull("KIE Client can't be found", kieClient);
     try{
       kieClient.getKieServicesClient().getServerInfo().getResult();
-      //TODO: we should check Workbench setup here too
     }catch(NoEndpointFoundException e){
       throw new RuntimeException("Please start a KIE Server & KIE Workbench for the test: docker run -p 8080:8080 -p 8001:8001 -d --name jbpm-workbench jboss/jbpm-workbench-showcase:7.15.0.Final && docker run -p 8180:8080 -d --name kie-server --link jbpm-workbench:kie-wb jboss/kie-server-showcase:7.15.0.Final  && docker logs -f kie-server",e);
     }
-    assertTrue("KIE Test Server is not able to handle BPMN", kieClient.getKieServicesClient().getServerInfo().getResult().getCapabilities().contains("BPM"));
+    assertTrue("KIE Server is not able to handle BPMN", kieClient.getKieServicesClient().getServerInfo().getResult().getCapabilities().contains("BPM"));
   }
+
 }
