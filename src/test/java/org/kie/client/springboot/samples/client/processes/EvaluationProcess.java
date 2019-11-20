@@ -42,6 +42,11 @@ public class EvaluationProcess implements IDeployableBPMNProcess {
 	}
 
 	@Override
+	public File getWorkItemHandlerJarFile() {
+		return null;
+	}
+
+	@Override
 	public HashMap<String, WorkItemHandler> getWorkItemHandlers() {
 		return (HashMap<String, WorkItemHandler>) Collections.EMPTY_MAP;
 	}

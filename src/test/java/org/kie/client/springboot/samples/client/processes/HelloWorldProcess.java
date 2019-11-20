@@ -21,6 +21,7 @@ public class HelloWorldProcess implements IDeployableBPMNProcess {
 	private final String VERSION = "1.0.0";
 	private final boolean IS_JAR = false;
 	private final boolean USE_WORKITEMHANDLERS = true;
+	private final String WORKITEMHANDLER_FILE = "src/test/resources/HelloWorldWorkItemHandler.jar";
 
 	@Override
 	public String getVersion() {
@@ -35,6 +36,11 @@ public class HelloWorldProcess implements IDeployableBPMNProcess {
 	@Override
 	public boolean hasWorkItemHandler() {
 		return USE_WORKITEMHANDLERS;
+	}
+
+	@Override
+	public File getWorkItemHandlerJarFile() {
+		return new File(WORKITEMHANDLER_FILE);
 	}
 
 	@Override
@@ -53,7 +59,7 @@ public class HelloWorldProcess implements IDeployableBPMNProcess {
 				.version("1.0.0")
 				.packageName(getPackage())
 				// environment variables ... but folks suggest to not use them
-				.global("environment", "org.kie.server.springboot.samples.server.globals.EnvironmentGlobal")
+				//.global("environment", "org.kie.server.springboot.samples.server.globals.EnvironmentGlobal")
 				// process variables
 				.variable("myvar", new StringDataType(),"default value","ItemSubjectRef", "_" + "myvar")
 				// nodes

@@ -29,7 +29,7 @@ mvn clean spring-boot:run
 If you like to use the jbpm workbench please run this seperatly as Docker container (https://hub.docker.com/r/jboss/jbpm-workbench-showcase):
 
 ```
-docker run -p 8080:8080 -p 8001:8001 -d -e JAVA_OPTS="-Djava.net.preferIPv4Stack=true" --name jbpm-workbench jboss/jbpm-workbench-showcase:7.6.0.Final
+docker run -p 8080:8080 -p 8001:8001 -d --name jbpm-workbench jboss/jbpm-workbench-showcase:7.15.0.Final
 
 URL & Credentails (start-up takes some time...):
 http://localhost:8080/jbpm-console

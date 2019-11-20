@@ -62,6 +62,12 @@ public interface IDeployableBPMNProcess {
 	boolean hasWorkItemHandler();
 
 	/**
+	 * Get the jar file that contains the WorkItemHandlers
+	 * @return the .jar file
+	 */
+	File getWorkItemHandlerJarFile();
+
+	/**
 	 * Get the list of workitemhandlers for the process
 	 * @return the list of workitemhandlers
 	 */

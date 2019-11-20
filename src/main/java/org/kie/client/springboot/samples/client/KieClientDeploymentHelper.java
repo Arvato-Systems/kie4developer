@@ -7,24 +7,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.AuthCache;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.entity.mime.HttpMultipartMode;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.BasicAuthCache;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import java.nio.charset.Charset;
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.drools.compiler.kie.builder.impl.InternalKieModule;
 import org.drools.compiler.kie.builder.impl.KieBuilderImpl;
 import org.kie.api.KieServices;
@@ -42,7 +26,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 @Component
 public class KieClientDeploymentHelper implements IDeploymentHelper {
@@ -83,12 +75,20 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   @Override
   public boolean deploy() {
 		deployJarIfExist();
+		deployWorkItemHandlerIfExist();
 
 		// send deployment command to server
 		String containerId = getRelease().getContainerId();
 		org.kie.server.api.model.ReleaseId releaseId = getRelease().getReleaseIdForServerAPI();
 
 		KieContainerResource resource = new KieContainerResource(containerId, releaseId);
+		// set runtime strategy to PER_PROCESS_INSTANCE
+//		KieServerConfigItem config = new KieServerConfigItem();
+//		config.setName(KieServerConstants.PCFG_RUNTIME_STRATEGY);
+//		config.setType(KieServerConstants.CAPABILITY_BPM);
+//		config.setValue("PER_PROCESS_INSTANCE");
+//		resource.addConfigItem(config);
+
 		ServiceResponse<KieContainerResource> createResponse = kieClient.getKieServicesClient().createContainer(containerId, resource);
 		if (createResponse.getType() == ResponseType.FAILURE) {
 			LOGGER.error("Error creating " + containerId + ". Message: " + createResponse.getMsg());
@@ -122,7 +122,6 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 				throw new RuntimeException("Process compilation error: " + builder.getResults().getMessages().toString());
 			}
 			InternalKieModule kieModule = (InternalKieModule) ks.getRepository().getKieModule(releaseId);
-
 			String pomXml = KieBuilderImpl.generatePomXml(releaseId);
 
 			try {
@@ -150,51 +149,51 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 		// Copy the jar into the kie-server's maven repo folder: docker cp ...
 		// extend the maven settings.xml on the kie-server to fetch artifacts from other repositories
 
-		// TODO: refactor this: use Spring REST Template and remove the org.apache.httpcomponents dependencies
-
 		//Maven coordinates
 		String groupId = getRelease().getGroupId();
 		String artifactId = getRelease().getArtifactId();
 		String version = getRelease().getVersion();
 
-		//Create the HttpEntity (body of our POST)
-		FileBody fileBody = new FileBody(jarFile);
-		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-		builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-		builder.addPart("upfile", fileBody);
-		HttpEntity entity = builder.build();
-
-		//Calculate the endpoint from the maven coordinates
-		//Note: the information from the pom inside the jar that gets uploaded is the relevant information for the target name //TODO: build a comparison-check for application.properties and pom information which should match
-		String resource = workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/" + workbenchMavenContext + "/" + groupId.replace('.', '/') + "/" + artifactId +"/" + version + "/" + artifactId + "-" + version + ".jar";
-
-		//Set up HttpClient to use Basic pre-emptive authentication with the provided credentials
-		HttpHost target = new HttpHost(workbenchHost, workbenchPort, workbenchProtocol);
-		CredentialsProvider credsProvider = new BasicCredentialsProvider();
-		credsProvider.setCredentials(new AuthScope(target.getHostName(), target.getPort()),	new UsernamePasswordCredentials(workbenchUser,workbenchPassword));
-		CloseableHttpClient httpclient = HttpClients.custom().setDefaultCredentialsProvider(credsProvider).build();
-		HttpPost httpPost = new HttpPost(resource);
-		httpPost.setEntity(entity);
-		AuthCache authCache = new BasicAuthCache();
-		BasicScheme basicAuth = new BasicScheme();
-		authCache.put(target, basicAuth);
-		HttpClientContext localContext = HttpClientContext.create();
-		localContext.setAuthCache(authCache);
+		String url = workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/" + workbenchMavenContext + "/" + groupId.replace('.', '/') + "/" + artifactId +"/" + version + "/" + artifactId + "-" + version + ".jar";
 
 		try {
-			//Perform the HTTP POST
-			CloseableHttpResponse response = httpclient.execute(target, httpPost, localContext);
-			LOGGER.info("Jar file " + jarFile.getName() + " successful uploaded into workbench");
-		} catch (ClientProtocolException e) {
-			LOGGER.error("Protocol Error while jar file upload", e);
-			throw new RuntimeException(e);
-		} catch (IOException e) {
-			LOGGER.error("IOException while while jar file upload", e);
-			throw new RuntimeException(e);
+			ResponseEntity<String> response = uploadFile(jarFile, url);
+			if (response.getStatusCode().is2xxSuccessful()){
+				LOGGER.info("Jar file " + jarFile.getName() + " successful uploaded into workbench");
+			}
+		} catch (Exception e) {
+			LOGGER.error("Error while jar file upload", e);
+			throw e;
 		}
 	}
 
-  @Override
+	/**
+	 * Deploy a workitemhandler into the Server Container
+	 * @see {https://developers.redhat.com/blog/2018/03/14/what-is-a-kjar/}
+	 */
+	private void deployWorkItemHandlerIfExist() {
+		if (processToDeploy.hasWorkItemHandler()){
+			File jarFile = processToDeploy.getWorkItemHandlerJarFile();
+
+			//Maven coordinates //TODO: maybe it is requred to sync this with the content of the workitemhandler jar pom.xml file
+			String groupId = getRelease().getGroupId();
+			String artifactId = getRelease().getArtifactId() + "-workitemhandler";
+			String version = getRelease().getVersion();
+			String url = workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/" + workbenchMavenContext + "/" + groupId.replace('.', '/') + "/" + artifactId +"/" + version + "/" + artifactId + "-" + version + ".jar";
+
+			try {
+				ResponseEntity<String> response = uploadFile(jarFile, url);
+				if (response.getStatusCode().is2xxSuccessful()){
+					LOGGER.info("Jar file " + jarFile.getName() + " successful uploaded into workbench");
+				}
+			} catch (Exception e) {
+				LOGGER.error("Error while jar file upload", e);
+				throw e;
+			}
+		}
+	}
+
+	@Override
   public boolean undeploy() {
     String containerId = getRelease().getContainerId();
 		KieContainerResource container = kieClient.getKieServicesClient().getContainerInfo(containerId).getResult();
@@ -219,6 +218,30 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 		if (processToDeploy.isDistributedAsJar()){
 			// removing jars from the server repo isn't possible
 		}
+	}
+
+	/**
+	 * Upload a single file into the kie-workbench by using Basic Auth
+	 * @param file the file to upload
+	 * @param url the target url
+	 * @return the http response
+	 */
+	private ResponseEntity<String> uploadFile(File file, String url){
+		HttpHeaders headers = new HttpHeaders() {{
+			String auth = workbenchUser + ":" + workbenchPassword;
+			byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(Charset.forName("US-ASCII")));
+			String authHeader = "Basic " + new String(encodedAuth);
+			set("Authorization", authHeader);
+			setContentType(MediaType.MULTIPART_FORM_DATA);
+		}};
+
+		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+		body.add("file", new FileSystemResource(file));
+
+		HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+		//Perform the HTTP POST
+		RestTemplate restTemplate = new RestTemplate();
+		return restTemplate.postForEntity(url, requestEntity, String.class);
 	}
 
 }
