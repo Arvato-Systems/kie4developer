@@ -13,6 +13,8 @@ public interface IRelease {
 	String getArtifactId();
 	String getVersion();
 	String getContainerId();
+	String getProjectName();
+	String getProjectDescription();
 
 	/**
 	 * Get the unique deployment id for the release.

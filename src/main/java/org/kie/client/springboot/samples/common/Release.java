@@ -20,10 +20,10 @@ public class Release implements IRelease{
 	@Value("${spring.application.version}")
 	private String version;
 
-	@Value("${spring.application.container.name}")
+	@Value("${spring.application.project.name}")
 	private String projectName;
-	@Value("${spring.application.container.version}")
-	private String projectVersion;
+	@Value("$spring.application.project.description}")
+	private String projectDescription;
 
 
 	/**
@@ -55,7 +55,23 @@ public class Release implements IRelease{
 	 * @return the container id
 	 */
 	public String getContainerId() {
-		return projectName + "_" + projectVersion;
+		return projectName + "_" + getVersion();
+	}
+
+	/**
+	 * Get the project name for the release
+	 * @return the project name
+	 */
+	public String getProjectName() {
+		return projectName;
+	}
+
+	/**
+	 * Get the project description for the release
+	 * @return the project description
+	 */
+	public String getProjectDescription() {
+		return projectDescription;
 	}
 
 	/**

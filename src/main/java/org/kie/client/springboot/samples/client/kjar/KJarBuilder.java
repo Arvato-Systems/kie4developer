@@ -51,7 +51,6 @@ public class KJarBuilder {
     String kmoduleInfo = buildKmoduleInfo(); // META-INF/kmodule.info
     String kmoduleXml = buildKmoduleXml(); // META-INF/kmodule.xml
     String persistenceXml = buildPersistence(); // META-INF/persistence.xml
-//    String kbase = buildKbase(); // META-INF/defaultKieBase/kbase.cache
     String pomXml = buildPomXml(); // META-INF/maven/<project group id>/<project id>/pom.xml
     String pomProperties = buildPomProperties();  // META-INF/maven/<project group id>/<project id>/pom.properties
 
@@ -60,7 +59,6 @@ public class KJarBuilder {
     Resource kmoduleInfoResource = ResourceFactory.newByteArrayResource(kmoduleInfo.getBytes()).setSourcePath("META-INF/kmodule.info");
     Resource kmoduleXmlResource = ResourceFactory.newByteArrayResource(kmoduleXml.getBytes()).setSourcePath("META-INF/kmodule.xml");
     Resource persistenceXmlResource = ResourceFactory.newByteArrayResource(persistenceXml.getBytes()).setSourcePath("META-INF/persistence.xml");
-//    Resource kbaseResource = ResourceFactory.newByteArrayResource(kbase.getBytes()).setSourcePath("META-INF/defaultKieBase/kbase.cache");
     Resource pomXmlResource = ResourceFactory.newByteArrayResource(pomXml.getBytes()).setSourcePath("META-INF/maven/"+release.getGroupId()+"/"+release.getArtifactId()+"/pom.xml");
     Resource pomPropertiesResource = ResourceFactory.newByteArrayResource(pomProperties.getBytes()).setSourcePath("META-INF/maven/"+release.getGroupId()+"/"+release.getArtifactId()+"/pom.properties");
     Resource bpmnResource = deployableBPMNProcess.getBPMNModel(); // .bpmn
@@ -70,13 +68,14 @@ public class KJarBuilder {
     kfs.write(kmoduleInfoResource);
     kfs.write(kmoduleXmlResource);
     kfs.write(persistenceXmlResource);
-    //kfs.write(kbaseResource);
     kfs.write(pomXmlResource);
     kfs.write(pomPropertiesResource);
     kfs.write(bpmnResource);
 
     // build the kmodule
     KieBuilder builder = ks.newKieBuilder(kfs).buildAll();
+
+    kfs.delete("META-INF/maven/org.default"); // remove the generated default pom
 
     // validate the Kmodule
     if (builder.getResults().hasMessages(Message.Level.ERROR)) {
@@ -96,16 +95,6 @@ public class KJarBuilder {
 
     return jarFile;
   }
-
-  /**
-   * Build the kbase.cache for the provided release
-   * @return the kbase.cache file content
-   */
-//  private String buildKbase() {
-//    String kbaseContent = "\n"
-//        + "\u0006\b \u0010\u000F\u0018";
-//    return kbaseContent;
-//  }
 
   /**
    * Build the persistence.xml for the provided release
@@ -211,8 +200,8 @@ public class KJarBuilder {
         + "  <artifactId>"+release.getArtifactId()+"</artifactId>\n"
         + "  <version>"+release.getVersion()+"</version>\n"
         + "  <packaging>kjar</packaging>\n"
-        + "  <name>"+release.getArtifactId()+"</name>\n"
-        + "  <description></description>\n"
+        + "  <name>"+release.getProjectName()+"</name>\n"
+        + "  <description>"+release.getProjectDescription()+"</description>\n"
         + "  <dependencies>\n"
 //        + "    <dependency>\n"
 //        + "      <groupId>com.thoughtworks.xstream</groupId>\n"

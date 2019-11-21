@@ -17,6 +17,18 @@ kieserver.user=admin
 kieserver.pwd=admin
 ```
 
+Remote KIE Workbench can be connected via following properties:
+
+```
+kieworkbench.protocol=http
+kieworkbench.host=localhost
+kieworkbench.port=8080
+kieworkbench.context=jbpm-console
+kieworkbench.context.maven=maven2
+kieworkbench.user=admin
+kieworkbench.pwd=admin
+```
+
 How to run it
 ------------------------------
 
