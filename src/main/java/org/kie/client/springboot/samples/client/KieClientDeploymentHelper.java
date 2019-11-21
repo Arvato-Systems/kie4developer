@@ -139,10 +139,10 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     processToDeploy.getWorkItemHandlers().forEach((workItemHandlerName, workItemHandler) -> {
         File jarFile = workItemHandler.getWorkItemHandlerJarFile();
 
-        //Maven coordinates //TODO: maybe it is requred to sync this with the content of the workitemhandler jar pom.xml file
-        String groupId = getRelease().getGroupId();
-        String artifactId = getRelease().getArtifactId() + "-workitemhandler";
-        String version = getRelease().getVersion();
+        //Maven coordinates
+        String groupId = workItemHandler.getPackage();
+        String artifactId = workItemHandler.getName();
+        String version = workItemHandler.getVersion();
         String url = workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/"
             + workbenchMavenContext + "/" + groupId.replace('.', '/') + "/" + artifactId + "/" + version + "/"
           + artifactId + "-" + version + ".jar";
