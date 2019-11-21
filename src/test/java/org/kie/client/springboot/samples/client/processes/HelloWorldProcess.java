@@ -9,8 +9,10 @@ import org.jbpm.ruleflow.core.RuleFlowProcessFactory;
 import org.kie.api.io.Resource;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
+import org.kie.client.springboot.samples.common.interfaces.IDeployableWorkItemHandler;
 import org.kie.internal.io.ResourceFactory;
 import org.kie.client.springboot.samples.client.workitemhandler.HelloWorldWorkItemHandler;
+import org.kie.server.api.model.definition.ProcessDefinition;
 
 /**
  * This is a sample {@link ProcessDefinition} that is based on a bpmn that is build by the jbpm fluent api ({@link RuleFlowProcessFactory})
@@ -20,8 +22,6 @@ public class HelloWorldProcess implements IDeployableBPMNProcess {
 
 	private final String VERSION = "1.0.0";
 	private final boolean IS_JAR = false;
-	private final boolean USE_WORKITEMHANDLERS = true;
-	private final String WORKITEMHANDLER_FILE = "src/test/resources/HelloWorldWorkItemHandler.jar";
 
 	@Override
 	public String getVersion() {
@@ -34,19 +34,10 @@ public class HelloWorldProcess implements IDeployableBPMNProcess {
 	}
 
 	@Override
-	public boolean hasWorkItemHandler() {
-		return USE_WORKITEMHANDLERS;
-	}
-
-	@Override
-	public File getWorkItemHandlerJarFile() {
-		return new File(WORKITEMHANDLER_FILE);
-	}
-
-	@Override
-	public HashMap<String,WorkItemHandler> getWorkItemHandlers() {
-		HashMap<String,WorkItemHandler> workitemhandler = new HashMap<>();
-		workitemhandler.put(HelloWorldWorkItemHandler.NAME, new HelloWorldWorkItemHandler());
+	public HashMap<String, IDeployableWorkItemHandler> getWorkItemHandlers() {
+		HashMap<String,IDeployableWorkItemHandler> workitemhandler = new HashMap<>();
+		HelloWorldWorkItemHandler helloWorldWorkItemHandler = new HelloWorldWorkItemHandler();
+		workitemhandler.put(helloWorldWorkItemHandler.getName(), helloWorldWorkItemHandler);
 		return workitemhandler;
 	}
 

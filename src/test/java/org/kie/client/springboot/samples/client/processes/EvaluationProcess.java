@@ -7,9 +7,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.kie.api.io.Resource;
-import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
+import org.kie.client.springboot.samples.common.interfaces.IDeployableWorkItemHandler;
 import org.kie.internal.io.ResourceFactory;
+import org.kie.server.api.model.definition.ProcessDefinition;
 
 /**
  * This is a sample {@link ProcessDefinition} that is based on a bpmn inside a kjar archive
@@ -19,7 +20,6 @@ public class EvaluationProcess implements IDeployableBPMNProcess {
 
 	private final String VERSION = "1.0.0";
 	private final boolean IS_JAR = true;
-	private final boolean USE_WORKITEMHANDLERS = false;
 	private final String PROCESSNAME = "evaluation";
 	private final String PACKAGENAME = "org.jbpm.test";
 	private final String KJAR_FILE = "src/test/resources/kjars/evaluation/jbpm-module.jar";
@@ -37,18 +37,8 @@ public class EvaluationProcess implements IDeployableBPMNProcess {
 	}
 
 	@Override
-	public boolean hasWorkItemHandler() {
-		return USE_WORKITEMHANDLERS;
-	}
-
-	@Override
-	public File getWorkItemHandlerJarFile() {
-		return null;
-	}
-
-	@Override
-	public HashMap<String, WorkItemHandler> getWorkItemHandlers() {
-		return (HashMap<String, WorkItemHandler>) Collections.EMPTY_MAP;
+	public HashMap<String, IDeployableWorkItemHandler> getWorkItemHandlers() {
+		return (HashMap<String, IDeployableWorkItemHandler>) Collections.EMPTY_MAP;
 	}
 
 	@Override

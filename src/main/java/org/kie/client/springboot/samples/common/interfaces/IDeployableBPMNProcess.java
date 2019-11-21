@@ -59,19 +59,13 @@ public interface IDeployableBPMNProcess {
 	 * Check if the process needs workitemhandlers
 	 * @return true if workitemhandler are required for the process
 	 */
-	boolean hasWorkItemHandler();
-
-	/**
-	 * Get the jar file that contains the WorkItemHandlers
-	 * @return the .jar file
-	 */
-	File getWorkItemHandlerJarFile();
+	default boolean hasWorkItemHandler(){ return getWorkItemHandlers() != null && getWorkItemHandlers().size() > 0;};
 
 	/**
 	 * Get the list of workitemhandlers for the process
 	 * @return the list of workitemhandlers
 	 */
-	HashMap<String,WorkItemHandler> getWorkItemHandlers();
+	HashMap<String,IDeployableWorkItemHandler> getWorkItemHandlers();
 
 	/**
 	 * Get the BPMN Process Model that can be used for deployment

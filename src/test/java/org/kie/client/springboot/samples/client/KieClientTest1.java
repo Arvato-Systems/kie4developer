@@ -86,9 +86,9 @@ public class KieClientTest1 {
         if (processes != null) {
         	for (ProcessDefinition process : processes) {
 						log.info("\t######### Found process definition: " + process.getId());
-                // get details of process definition
-              ProcessDefinition definition =  kieClient.getProcessClient().getProcessDefinition(containerId, process.getId());
-              System.out.println("\t######### Definition details: " + definition);
+						// get details of process definition
+						ProcessDefinition definition =  kieClient.getProcessClient().getProcessDefinition(containerId, process.getId());
+						log.info("\t######### Definition details: " + definition);
            }
         }
         return processes;

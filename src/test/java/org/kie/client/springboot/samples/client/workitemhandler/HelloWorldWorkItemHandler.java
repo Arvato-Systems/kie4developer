@@ -1,10 +1,12 @@
 package org.kie.client.springboot.samples.client.workitemhandler;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
+import org.kie.client.springboot.samples.common.interfaces.IDeployableWorkItemHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -16,11 +18,22 @@ import org.springframework.stereotype.Component;
  * @author TRIBE01
  */
 @Component("HelloWorldWorkItemHandler") // with Spring this Handler get autowired to the KIE-Server
-public class HelloWorldWorkItemHandler implements WorkItemHandler {
+public class HelloWorldWorkItemHandler implements WorkItemHandler, IDeployableWorkItemHandler {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(HelloWorldWorkItemHandler.class);
 
-	public static String NAME = "HelloWorldWorkItemHandler";
+	private final String VERSION = "1.0.0";
+	private final String WORKITEMHANDLER_FILE = "src/test/resources/HelloWorldWorkItemHandler-1.0.0.jar";
+
+	@Override
+	public String getVersion() {
+		return VERSION;
+	}
+
+	@Override
+	public File getWorkItemHandlerJarFile() {
+		return new File(WORKITEMHANDLER_FILE);
+	}
 
 	@Override
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
@@ -35,7 +48,12 @@ public class HelloWorldWorkItemHandler implements WorkItemHandler {
 		manager.completeWorkItem(workItem.getId(), result);
 		LOGGER.info("end execution of " + HelloWorldWorkItemHandler.class);
 	}
-	
+
+	@Override
+	public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
+		// No implementation for aborting required
+	}
+
 	/**
 	 * Helper to retrieve a process variable
 	 * @param workItem the workitem with all process variables
@@ -46,10 +64,4 @@ public class HelloWorldWorkItemHandler implements WorkItemHandler {
 	private Object getProcessVariableOrDefault(WorkItem workItem, String key, Object defaultValue) {
 		return workItem.getParameters().get(key) == null ? defaultValue : workItem.getParameters().get(key);
 	}
-
-	@Override
-	public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
-		// No implementation for aborting required
-	}
-
 }
