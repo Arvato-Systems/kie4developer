@@ -24,7 +24,7 @@ public class KieClientExecutionHelper implements IExecutionHelper<TaskSummary> {
 	@Override
 	public Long startNewProcessInstance(String deploymentId, String processId, Map<String, Object> params) {
 		if (!deploymentId.equals(release.getContainerId())){
-			throw new RuntimeException("deploymentId '" + deploymentId + "' has to be equals to containerId '"+release.getContainerId()+"' for deployment via REST Client!");
+			throw new RuntimeException("deploymentId '" + deploymentId + "' has to be equal to containerId '"+release.getContainerId()+"' for REST Client!");
 		}
 		return kieClient.getProcessClient().startProcess(deploymentId, processId, params);
 	}

@@ -34,23 +34,23 @@ public class KJarBuilder {
 
   /**
    * Build the Kjar with
+   * @param processToDeploy  he related processes
+   * @param deployableWorkitemhandlers the related workitemhandlers
    * @return the kjar file
    * @throws IOException on any I/O Exceptions
    * @throws RuntimeException if compilation fails
    */
-  public File buildKjar(IDeployableBPMNProcess processToDeploy, List<IDeployableWorkItemHandler> workitemhandlers) throws IOException {
-    File jarFile = File.createTempFile(release.getArtifactId() + "-" + release.getVersion(), ".jar");
-
+  public File buildKjar(IDeployableBPMNProcess processToDeploy, List<IDeployableWorkItemHandler> deployableWorkitemhandlers) {
     // create the Kmodule alias Kjar
     KieServices ks = KieServices.Factory.get();
     KieFileSystem kfs = ks.newKieFileSystem();
 
     // generate content
-    String deploymentDescriptor = buildDeploymentDescriptor(workitemhandlers); // META-INF/kie-deployment-descriptor.xml
+    String deploymentDescriptor = buildDeploymentDescriptor(deployableWorkitemhandlers); // META-INF/kie-deployment-descriptor.xml
     String kmoduleInfo = buildKmoduleInfo(); // META-INF/kmodule.info
     String kmoduleXml = buildKmoduleXml(); // META-INF/kmodule.xml
     String persistenceXml = buildPersistence(); // META-INF/persistence.xml
-    String pomXml = buildPomXml(workitemhandlers); // META-INF/maven/<project group id>/<project id>/pom.xml
+    String pomXml = buildPomXml(deployableWorkitemhandlers); // META-INF/maven/<project group id>/<project id>/pom.xml
     String pomProperties = buildPomProperties();  // META-INF/maven/<project group id>/<project id>/pom.properties
 
     // convert to Resources
@@ -84,7 +84,9 @@ public class KJarBuilder {
     }
 
     // build the kjar file that represents the kmodule
+    File jarFile;
     try {
+      jarFile = File.createTempFile(release.getArtifactId() + "-" + release.getVersion(), ".jar");
       OutputStream os = new FileOutputStream(jarFile);
       InternalKieModule kieModule = (InternalKieModule) builder.getKieModule();
       os.write(kieModule.getBytes());
@@ -92,7 +94,6 @@ public class KJarBuilder {
     } catch (IOException e) {
       throw new RuntimeException("Kjar write error", e);
     }
-
     return jarFile;
   }
 
@@ -140,6 +141,7 @@ public class KJarBuilder {
 
   /**
    * Build the kie-deployment-descriptor.xml for the provided release
+   * @param deployableWorkitemhandlers the related workitemhandlers
    * @return the kie-deployment-descriptor.xml file content
    */
   private String buildDeploymentDescriptor(List<IDeployableWorkItemHandler> deployableWorkitemhandlers){
@@ -185,6 +187,7 @@ public class KJarBuilder {
 
   /**
    * Build the pom.xml for the provided release
+   * @param deployableWorkitemhandlers the related workitemhandlers
    * @return the pom.xml file content
    */
   private String buildPomXml(List<IDeployableWorkItemHandler> deployableWorkitemhandlers) {

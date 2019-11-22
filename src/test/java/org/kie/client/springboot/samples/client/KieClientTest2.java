@@ -1,25 +1,21 @@
 package org.kie.client.springboot.samples.client;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.kie.client.springboot.samples.client.workitemhandler.HelloWorldWorkItemHandler;
-import org.kie.client.springboot.samples.common.interfaces.IDeployableWorkItemHandler;
+import org.kie.client.springboot.samples.client.processes.EvaluationProcess;
+import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
 import org.kie.server.api.model.KieContainerResource;
 import org.kie.server.api.model.KieContainerResourceList;
 import org.kie.server.api.model.definition.ProcessDefinition;
 import org.kie.server.api.model.instance.ProcessInstance;
-import org.kie.client.springboot.samples.client.processes.EvaluationProcess;
-import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
@@ -30,7 +26,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 				"spring.application.name=evaluation",
 				"spring.application.version=1.0"
 		})
-@DirtiesContext
 public class KieClientTest2 {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(KieClientTest2.class);

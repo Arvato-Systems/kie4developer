@@ -85,12 +85,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 
     if (!processToDeploy.isDistributedAsJar()) {
       // in this case we have to build the kjar by our own first
-			try{
-        jarFile = kJarBuilder.buildKjar(processToDeploy, workItemHandlerToDeploy);
-        //pomFile = kJarBuilder.buildPomXml();
-      }catch (Exception e){
-        throw new RuntimeException("Kjar or pom generation error", e);
-      }
+      jarFile = kJarBuilder.buildKjar(processToDeploy, workItemHandlerToDeploy);
       LOGGER.info("Kjar created successfull: " + jarFile.getAbsolutePath());
     }
 
@@ -112,9 +107,8 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
         + workbenchMavenContext + "/" + groupId.replace('.', '/') + "/" + artifactId + "/" + version + "/" + artifactId
         + "-" + version + ".jar";
 
-    ResponseEntity<String> response = null;
     try {
-      response = jarUploader.uploadFile(jarFile, url, workbenchUser, workbenchPassword);
+      ResponseEntity<String> response = jarUploader.uploadFile(jarFile, url, workbenchUser, workbenchPassword);
       if (response.getStatusCode().is2xxSuccessful()) {
         LOGGER.info("Jar file " + jarFile.getName() + " successful uploaded into workbench");
       }
@@ -180,7 +174,9 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
    * Undeploy a jar (containing workitemhandler) from the Server
    */
   private void undeployWorkItemHandlerIfExist() {
-    LOGGER.warn("removing jars from the server repo isn't possible.");
+    if (workItemHandlerToDeploy != null){
+      LOGGER.warn("removing jars from the server repo isn't possible.");
+    }
   }
 
 }
