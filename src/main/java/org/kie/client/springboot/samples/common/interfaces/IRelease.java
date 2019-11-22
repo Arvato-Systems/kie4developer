@@ -1,6 +1,6 @@
 package org.kie.client.springboot.samples.common.interfaces;
 
-import org.springframework.stereotype.Component;
+import java.io.File;
 
 /**
  * One single Release
@@ -43,6 +43,20 @@ public interface IRelease {
 	 * @return the project description
 	 */
 	String getProjectDescription();
+
+	/**
+	 * Get the kjar file that contains the Release (KModule)
+	 * @see #isDistributedAsJar()
+	 * @return the .jar file
+	 */
+	File getJarFile();
+
+	/**
+	 * Check if the release is distributed as kjar (true) or if it has to be build (false)
+	 * if distributed as jar {@link #getJarFile()} can be used to retrieve the file
+	 * @return true if release files were provided as jar file
+	 */
+	default boolean isDistributedAsJar() { return getJarFile() != null; }
 
 	/**
 	 * Get the unique deployment id for the release.

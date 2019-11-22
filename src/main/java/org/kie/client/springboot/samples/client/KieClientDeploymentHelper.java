@@ -82,11 +82,13 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
    */
   private void deployJarIfExist() {
     File jarFile;
-    // if we already have a existing jar let's simply take this //TODO: move this to the release level - a single process never comes as jar; this is always as kjar
-    if (processesToDeploy.size() == 1 && processesToDeploy.get(0).isDistributedAsJar()) {
-      jarFile = processesToDeploy.get(0).getJarFile();
+
+    if (release.isDistributedAsJar()) {
+      // if we already have a existing jar let's simply take this
+      jarFile = release.getJarFile();
+      LOGGER.info("Using existing Kjar: " + jarFile.getAbsolutePath());
     }else {
-      // in this case we have to build the kjar by our own first
+      // in this case we have to build the kjar release file by our own first
       jarFile = kJarBuilder.buildKjar(processesToDeploy, workItemHandlersToDeploy);
       LOGGER.info("Kjar created successfull: " + jarFile.getAbsolutePath());
     }
@@ -116,8 +118,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
         LOGGER.info("Jar file " + jarFile.getName() + " successful uploaded into workbench");
       }
     } catch (Exception e) {
-      throw new RuntimeException("Error while jar file upload. This could be also caused by missing dependencies.",
-          e);
+      throw new RuntimeException("Error while jar file upload. This could be also caused by missing dependencies.", e);
     }
   }
 
@@ -169,9 +170,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
    * Undeploy a kjar from the Server
    */
   private void undeployJarIfExist() {
-    for (IDeployableBPMNProcess processToDeploy : processesToDeploy){
-      LOGGER.warn("removing jars from the server repo isn't possible.");
-    }
+    LOGGER.warn("removing jars from the server repo isn't possible.");
   }
 
   /**

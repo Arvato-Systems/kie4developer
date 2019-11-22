@@ -22,10 +22,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest(
 		properties = {
-				// this has to match with the pom.xml in the kjar file
+				// this has to match with the pom.xml in the kjar file (here jbpm-module.jar)
 				"spring.application.groupid=evaluation",
 				"spring.application.name=evaluation",
-				"spring.application.version=1.0"
+				"spring.application.version=1.0",
+				"spring.application.project.jar=src/test/resources/kjars/evaluation/jbpm-module.jar"
 		})
 public class KieClientTest2 {
 

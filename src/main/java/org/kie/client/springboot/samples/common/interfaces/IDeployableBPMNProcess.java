@@ -40,23 +40,9 @@ public interface IDeployableBPMNProcess {
 	}
 
 	/**
-	 * Check if the process is distributed as jar (true) or as in in-memory file (false)
-	 * if distributed as jar {@link #getJarFile()} can be used to retrieve the process.
-	 * if distributed as in-memory file {@link #getBPMNModel()} can be used to retrieve the process.
-	 * @return true if process files were provided as jar file
-	 */
-	boolean isDistributedAsJar();
-
-	/**
 	 * Get the BPMN Process Model that can be used for deployment
 	 * @return the BPM Process Definition
 	 */
 	Resource getBPMNModel();
-
-	/**
-	 * Get the jar file that contains the BPMN Process Model
-	 * @return the .jar file
-	 */
-	File getJarFile();
 
 }

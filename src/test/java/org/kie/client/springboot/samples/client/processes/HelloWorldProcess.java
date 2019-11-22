@@ -1,17 +1,12 @@
 package org.kie.client.springboot.samples.client.processes;
 
-import java.io.File;
-import java.util.HashMap;
 import org.jbpm.bpmn2.xml.XmlBPMNProcessDumper;
 import org.jbpm.process.core.datatype.impl.type.StringDataType;
 import org.jbpm.ruleflow.core.RuleFlowProcess;
 import org.jbpm.ruleflow.core.RuleFlowProcessFactory;
 import org.kie.api.io.Resource;
-import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
-import org.kie.client.springboot.samples.common.interfaces.IDeployableWorkItemHandler;
 import org.kie.internal.io.ResourceFactory;
-import org.kie.client.springboot.samples.client.workitemhandler.HelloWorldWorkItemHandler;
 import org.kie.server.api.model.definition.ProcessDefinition;
 
 /**
@@ -21,21 +16,10 @@ import org.kie.server.api.model.definition.ProcessDefinition;
 public class HelloWorldProcess implements IDeployableBPMNProcess {
 
 	private final String VERSION = "1.0.0";
-	private final boolean IS_JAR = false;
 
 	@Override
 	public String getVersion() {
 		return VERSION;
-	}
-
-	@Override
-	public boolean isDistributedAsJar() {
-		return IS_JAR;
-	}
-
-	@Override
-	public File getJarFile() {
-		return null;
 	}
 
 	@Override
