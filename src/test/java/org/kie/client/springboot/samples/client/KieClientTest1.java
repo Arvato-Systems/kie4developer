@@ -1,27 +1,35 @@
 package org.kie.client.springboot.samples.client;
 
+import com.sun.javafx.scene.control.skin.VirtualFlow.ArrayLinkedList;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.kie.client.springboot.samples.client.workitemhandler.HelloWorldWorkItemHandler;
+import org.kie.client.springboot.samples.common.interfaces.IDeployableWorkItemHandler;
 import org.kie.server.api.model.KieContainerResource;
 import org.kie.server.api.model.KieContainerResourceList;
 import org.kie.server.api.model.definition.ProcessDefinition;
 import org.kie.server.api.model.instance.ProcessInstance;
 import org.kie.client.springboot.samples.client.processes.HelloWorldProcess;
 import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@DirtiesContext
 public class KieClientTest1 {
 
-	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(KieClientTest1.class);
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(KieClientTest1.class);
 	@Autowired
 	private KieClient kieClient;
 	@Autowired
@@ -38,11 +46,14 @@ public class KieClientTest1 {
 	 */
 	@Test
 	public void testDeployableBPMNProcessAsClass() {
-		// 1. create a new process
+		// 1. create a new process & set required workitemhandler
 		IDeployableBPMNProcess processToDeploy = new HelloWorldProcess();
+		List<IDeployableWorkItemHandler> workItemHandlerToDeploy = new ArrayList<>();
+		workItemHandlerToDeploy.add(new HelloWorldWorkItemHandler());
 
-		// 2. deploy a the process to the server
+		// 2. deploy a the process & workitemhandler to the server
 		clientDeploymentHelper.setProcessToDeploy(processToDeploy);
+		clientDeploymentHelper.setWorkItemHandler(workItemHandlerToDeploy);
 		clientDeploymentHelper.deploy();
 
 		// 3. execute the process
@@ -51,7 +62,7 @@ public class KieClientTest1 {
 		params.put("reason", "test on spring boot");
 
 		Long processInstanceId = clientExecutionHelper.startNewProcessInstance(clientDeploymentHelper.getRelease().getContainerId(), processToDeploy.getProcessId(), params);
-		log.info("Started new process with process instance id " + processInstanceId);
+		LOGGER.info("Started new process with process instance id " + processInstanceId);
 
 		//4. show some useful information from the server
 		KieContainerResourceList containerList = showAvailableContainers();
@@ -62,7 +73,7 @@ public class KieClientTest1 {
 		showAvailableActiveProcessesInstances();
 
 		clientExecutionHelper.abortProcessInstance(processInstanceId);
-		log.info("\t######### Aborted process instance with id " + processInstanceId);
+		LOGGER.info("\t######### Aborted process instance with id " + processInstanceId);
 
 		clientDeploymentHelper.undeploy();
 	}
@@ -74,7 +85,7 @@ public class KieClientTest1 {
         // check if the container is not yet deployed, if not deploy it
         if (containers != null) {
             for (KieContainerResource kieContainerResource : containers.getContainers()) {
-							log.info("\t######### Found container " + kieContainerResource.getContainerId());
+							LOGGER.info("\t######### Found container " + kieContainerResource.getContainerId());
             }
         }
         return containers;
@@ -85,10 +96,10 @@ public class KieClientTest1 {
         List<ProcessDefinition> processes = kieClient.getQueryClient().findProcesses(0, Integer.MAX_VALUE);
         if (processes != null) {
         	for (ProcessDefinition process : processes) {
-						log.info("\t######### Found process definition: " + process.getId());
+						LOGGER.info("\t######### Found process definition: " + process.getId());
 						// get details of process definition
 						ProcessDefinition definition =  kieClient.getProcessClient().getProcessDefinition(containerId, process.getId());
-						log.info("\t######### Definition details: " + definition);
+						LOGGER.info("\t######### Definition details: " + definition);
            }
         }
         return processes;
@@ -99,11 +110,11 @@ public class KieClientTest1 {
         List<ProcessInstance> activeInstances = kieClient.getQueryClient().findProcessInstancesByStatus(status, 0, Integer.MAX_VALUE);
         if (activeInstances != null) {
             for (ProcessInstance instance : activeInstances) {
-							log.info("\t######### Found process instance: " + instance.getId());
+							LOGGER.info("\t######### Found process instance: " + instance.getId());
             	Map<String, Object> variables =  kieClient.getProcessClient().getProcessInstanceVariables(instance.getContainerId(), instance.getId());
-							log.info("\t######### Process instance variables: " + variables);
+							LOGGER.info("\t######### Process instance variables: " + variables);
 							kieClient.getProcessClient().setProcessVariables(instance.getContainerId(), instance.getId(), variables);
-							log.info("\t######### Process instance variables changed: " + variables);
+							LOGGER.info("\t######### Process instance variables changed: " + variables);
             }
         }
         return activeInstances;

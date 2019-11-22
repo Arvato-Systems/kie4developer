@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Map.Entry;
+import java.util.List;
 import org.drools.compiler.kie.builder.impl.InternalKieModule;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieBuilder;
@@ -17,21 +17,20 @@ import org.kie.client.springboot.samples.common.interfaces.IRelease;
 import org.kie.internal.io.ResourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Helper to create Kjar alias KModule for a release
+ * @see {https://github.com/kiegroup/jbpm/blob/7.6.x/jbpm-runtime-manager/src/test/java/org/jbpm/runtime/manager/impl/deploy/AbstractDeploymentDescriptorTest.java}
+ * @author TRIBE01
  */
+@Component
 public class KJarBuilder {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(KJarBuilder.class);
-
+  @Autowired
   private IRelease release;
-  private IDeployableBPMNProcess deployableBPMNProcess;
-
-  public KJarBuilder(IRelease release, IDeployableBPMNProcess deployableBPMNProcess){
-    this.release = release;
-    this.deployableBPMNProcess = deployableBPMNProcess;
-  }
 
   /**
    * Build the Kjar with
@@ -39,19 +38,19 @@ public class KJarBuilder {
    * @throws IOException on any I/O Exceptions
    * @throws RuntimeException if compilation fails
    */
-  public File buildKjar() throws IOException {
-    File jarFile = File.createTempFile(release.getArtifactId() + "-" +release.getVersion(), ".jar");
+  public File buildKjar(IDeployableBPMNProcess processToDeploy, List<IDeployableWorkItemHandler> workitemhandlers) throws IOException {
+    File jarFile = File.createTempFile(release.getArtifactId() + "-" + release.getVersion(), ".jar");
 
     // create the Kmodule alias Kjar
     KieServices ks = KieServices.Factory.get();
     KieFileSystem kfs = ks.newKieFileSystem();
 
     // generate content
-    String deploymentDescriptor = buildDeploymentDescriptor(); // META-INF/kie-deployment-descriptor.xml
+    String deploymentDescriptor = buildDeploymentDescriptor(workitemhandlers); // META-INF/kie-deployment-descriptor.xml
     String kmoduleInfo = buildKmoduleInfo(); // META-INF/kmodule.info
     String kmoduleXml = buildKmoduleXml(); // META-INF/kmodule.xml
     String persistenceXml = buildPersistence(); // META-INF/persistence.xml
-    String pomXml = buildPomXml(); // META-INF/maven/<project group id>/<project id>/pom.xml
+    String pomXml = buildPomXml(workitemhandlers); // META-INF/maven/<project group id>/<project id>/pom.xml
     String pomProperties = buildPomProperties();  // META-INF/maven/<project group id>/<project id>/pom.properties
 
     // convert to Resources
@@ -61,7 +60,7 @@ public class KJarBuilder {
     Resource persistenceXmlResource = ResourceFactory.newByteArrayResource(persistenceXml.getBytes()).setSourcePath("META-INF/persistence.xml");
     Resource pomXmlResource = ResourceFactory.newByteArrayResource(pomXml.getBytes()).setSourcePath("META-INF/maven/"+release.getGroupId()+"/"+release.getArtifactId()+"/pom.xml");
     Resource pomPropertiesResource = ResourceFactory.newByteArrayResource(pomProperties.getBytes()).setSourcePath("META-INF/maven/"+release.getGroupId()+"/"+release.getArtifactId()+"/pom.properties");
-    Resource bpmnResource = deployableBPMNProcess.getBPMNModel(); // .bpmn
+    Resource bpmnResource = processToDeploy.getBPMNModel(); // .bpmn
 
     // write to kmodule
     kfs.write(deploymentDescriptorResource);
@@ -75,7 +74,8 @@ public class KJarBuilder {
     // build the kmodule
     KieBuilder builder = ks.newKieBuilder(kfs).buildAll();
 
-    kfs.delete("META-INF/maven/org.default"); // remove the generated default pom
+    // remove the generated default pom
+    kfs.delete("META-INF/maven/org.default");
 
     // validate the Kmodule
     if (builder.getResults().hasMessages(Message.Level.ERROR)) {
@@ -101,9 +101,9 @@ public class KJarBuilder {
    * @return the persistence.xml file content
    */
   private String buildPersistence() {
-    String persistenceXml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+    return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
         + "<persistence xmlns=\"http://java.sun.com/xml/ns/persistence\" xmlns:orm=\"http://java.sun.com/xml/ns/persistence/orm\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" version=\"2.0\" xsi:schemaLocation=\"http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistence/orm_2_0.xsd\">\n"
-        + "    <persistence-unit name=\""+release.getGroupId()+":"+release.getArtifactId()+":"+release.getVersion()+"\" transaction-type=\"JTA\">\n"
+        + "    <persistence-unit name=\""+release.getDeploymentId()+"\" transaction-type=\"JTA\">\n"
         + "        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>\n"
         + "        <jta-data-source>java:jboss/datasources/ExampleDS</jta-data-source>\n"
         + "        <exclude-unlisted-classes>true</exclude-unlisted-classes>\n"
@@ -117,7 +117,6 @@ public class KJarBuilder {
         + "        </properties>\n"
         + "    </persistence-unit>\n"
         + "</persistence>\n";
-    return persistenceXml;
   }
 
   /**
@@ -125,8 +124,7 @@ public class KJarBuilder {
    * @return the kmodule.xml file content
    */
   private String buildKmoduleXml() {
-    String kmoduleContent = "<kmodule xmlns=\"http://www.drools.org/xsd/kmodule\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"/>";
-    return kmoduleContent;
+    return "<kmodule xmlns=\"http://www.drools.org/xsd/kmodule\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"/>";
   }
 
   /**
@@ -134,18 +132,17 @@ public class KJarBuilder {
    * @return the kmodule.info file content
    */
   private String buildKmoduleInfo() {
-   String kmoduleXml = "<org.drools.core.rule.KieModuleMetaInfo>\n"
+   return "<org.drools.core.rule.KieModuleMetaInfo>\n"
         + "  <typeMetaInfos/>\n"
         + "  <rulesByPackage/>\n"
         + "</org.drools.core.rule.KieModuleMetaInfo>";
-    return kmoduleXml;
   }
 
   /**
    * Build the kie-deployment-descriptor.xml for the provided release
    * @return the kie-deployment-descriptor.xml file content
    */
-  private String buildDeploymentDescriptor(){
+  private String buildDeploymentDescriptor(List<IDeployableWorkItemHandler> deployableWorkitemhandlers){
      String deplomentDescriptorXml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
         + "<deployment-descriptor xsi:schemaLocation=\"http://www.jboss.org/jbpm deployment-descriptor.xsd\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
         + "    <persistence-unit>org.jbpm.domain</persistence-unit>\n"
@@ -158,12 +155,12 @@ public class KJarBuilder {
         + "    <task-event-listeners/>\n"
         + "    <globals/>\n"
         + "    <work-item-handlers>\n";
-    for (Entry<String, IDeployableWorkItemHandler> set : deployableBPMNProcess.getWorkItemHandlers().entrySet()) {
+    for (IDeployableWorkItemHandler workitemhandler : deployableWorkitemhandlers) {
       deplomentDescriptorXml += "        <work-item-handler>\n"
           + "            <resolver>mvel</resolver>\n"
-          + "            <identifier>new " + set.getValue().getClass().getName() + "()</identifier>\n"
+          + "            <identifier>new " + workitemhandler.getClass().getName() + "()</identifier>\n"
           + "            <parameters/>\n"
-          + "            <name>" + set.getKey() + "</name>\n"
+          + "            <name>" + workitemhandler.getName() + "</name>\n"
           + "        </work-item-handler>";
     }
     deplomentDescriptorXml += "    </work-item-handlers>\n"
@@ -181,17 +178,16 @@ public class KJarBuilder {
    * @return the pom.properties file content
    */
   private String buildPomProperties() {
-    String pomProperties = "groupId="+release.getGroupId()+"\n"
+    return "groupId="+release.getGroupId()+"\n"
         + "artifactId="+release.getArtifactId()+"\n"
         + "version="+release.getVersion()+"\n";
-    return pomProperties;
   }
 
   /**
    * Build the pom.xml for the provided release
    * @return the pom.xml file content
    */
-  private String buildPomXml() {
+  private String buildPomXml(List<IDeployableWorkItemHandler> deployableWorkitemhandlers) {
     String pomXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         + "<project xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\" xmlns=\"http://maven.apache.org/POM/4.0.0\"\n"
         + "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
@@ -240,10 +236,10 @@ public class KJarBuilder {
         + "      <scope>provided</scope>\n"
         + "    </dependency>\n";
 
-    for (Entry<String, IDeployableWorkItemHandler> set : deployableBPMNProcess.getWorkItemHandlers().entrySet()) {
+    for (IDeployableWorkItemHandler workitemhandler : deployableWorkitemhandlers) {
       pomXml+= "    <dependency>\n"
-            + "      <groupId>"+set.getValue().getPackage()+"</groupId>\n"
-            + "      <artifactId>"+set.getValue().getName()+"</artifactId>\n"
+            + "      <groupId>"+workitemhandler.getPackage()+"</groupId>\n"
+            + "      <artifactId>"+workitemhandler.getName()+"</artifactId>\n"
             + "      <version>1.0.0</version>\n"
             + "      <scope>compile</scope>\n"
             + "    </dependency>\n";

@@ -1,14 +1,12 @@
 package org.kie.client.springboot.samples.client.processes;
 
-import java.io.*;
-import java.util.Collections;
-import java.util.HashMap;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
 import org.kie.api.io.Resource;
 import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
-import org.kie.client.springboot.samples.common.interfaces.IDeployableWorkItemHandler;
 import org.kie.internal.io.ResourceFactory;
 import org.kie.server.api.model.definition.ProcessDefinition;
 
@@ -23,7 +21,6 @@ public class EvaluationProcess implements IDeployableBPMNProcess {
 	private final String PROCESSNAME = "evaluation";
 	private final String PACKAGENAME = "org.jbpm.test";
 	private final String KJAR_FILE = "src/test/resources/kjars/evaluation/jbpm-module.jar";
-	private final String POM_FILE = "src/test/resources/kjars/evaluation/pom.xml";
 	private final String BPMN_FILE = "evaluation.bpmn2";
 
 	@Override
@@ -37,11 +34,6 @@ public class EvaluationProcess implements IDeployableBPMNProcess {
 	}
 
 	@Override
-	public HashMap<String, IDeployableWorkItemHandler> getWorkItemHandlers() {
-		return (HashMap<String, IDeployableWorkItemHandler>) Collections.EMPTY_MAP;
-	}
-
-	@Override
 	public String getName() {
 		return PROCESSNAME; // comes from the xml
 	}
@@ -49,6 +41,11 @@ public class EvaluationProcess implements IDeployableBPMNProcess {
 	@Override
 	public String getPackage() {
 		return PACKAGENAME; // comes from the xml
+	}
+
+	@Override
+	public File getJarFile() {
+		return new File(KJAR_FILE);
 	}
 
 	@Override
@@ -72,13 +69,4 @@ public class EvaluationProcess implements IDeployableBPMNProcess {
 		return res;
 	}
 
-	@Override
-	public File getJarFile() {
-		return new File(KJAR_FILE);
-	}
-
-	@Override
-	public File getPomFile() {
-		return new File(POM_FILE);
-	}
 }

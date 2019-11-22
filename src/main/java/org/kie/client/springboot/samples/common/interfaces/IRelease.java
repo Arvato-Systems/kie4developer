@@ -6,14 +6,42 @@ import org.springframework.stereotype.Component;
  * One single Release
  * @author TRIBE01
  */
-@Component
 public interface IRelease {
 
+	/**
+	 * Get the group id for the release
+	 * @return the group id
+	 */
 	String getGroupId();
+
+	/**
+	 * Get the artifact id for the release
+	 * @return the artifact id
+	 */
 	String getArtifactId();
+
+	/**
+	 * Get the version for the release
+	 * @return the version number
+	 */
 	String getVersion();
+
+	/**
+	 * Get the container Id
+	 * @return the container id
+	 */
 	String getContainerId();
+
+	/**
+	 * Get the project name for the release
+	 * @return the project name
+	 */
 	String getProjectName();
+
+	/**
+	 * Get the project description for the release
+	 * @return the project description
+	 */
 	String getProjectDescription();
 
 	/**

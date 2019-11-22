@@ -2,9 +2,7 @@ package org.kie.client.springboot.samples.common.interfaces;
 
 import java.io.File;
 import org.kie.api.runtime.process.WorkItemHandler;
-import org.springframework.stereotype.Component;
 
-@Component
 public interface IDeployableWorkItemHandler extends WorkItemHandler {
 
   /**
@@ -34,4 +32,5 @@ public interface IDeployableWorkItemHandler extends WorkItemHandler {
    * @return the .jar file
    */
   File getWorkItemHandlerJarFile();
+
 }

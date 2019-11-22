@@ -19,73 +19,47 @@ public class Release implements IRelease{
 	private String artifactId;
 	@Value("${spring.application.version}")
 	private String version;
-
 	@Value("${spring.application.project.name}")
 	private String projectName;
-	@Value("$spring.application.project.description}")
+	@Value("${spring.application.project.description}")
 	private String projectDescription;
 
-
-	/**
-	 * Get the group id for the release
-	 * @return the group id
-	 */
+	@Override
 	public String getGroupId() {
 		return groupId;
 	}
 
-	/**
-	 * Get the artifact id for the release
-	 * @return the artifact id
-	 */
+	@Override
 	public String getArtifactId() {
 		return artifactId;
 	}
 
-	/**
-	 * Get the version for the release
-	 * @return the version number
-	 */
+	@Override
 	public String getVersion() {
 		return version;
 	}
 
-	/**
-	 * Get the container Id
-	 * @return the container id
-	 */
+	@Override
 	public String getContainerId() {
 		return projectName + "_" + getVersion();
 	}
 
-	/**
-	 * Get the project name for the release
-	 * @return the project name
-	 */
+	@Override
 	public String getProjectName() {
 		return projectName;
 	}
 
-	/**
-	 * Get the project description for the release
-	 * @return the project description
-	 */
+	@Override
 	public String getProjectDescription() {
 		return projectDescription;
 	}
 
-	/**
-	 * Get the unique release id
-	 * @return release id
-	 */
+	@Override
 	public org.kie.server.api.model.ReleaseId getReleaseIdForServerAPI() {
 		return new ReleaseId(getGroupId(), getArtifactId(), getVersion());
 	}
 
-	/**
-	 * Get the unique release id
-	 * @return release id
-	 */
+	@Override
 	public org.kie.api.builder.ReleaseId getReleaseIdForClientAPI() {
 		return KieServices.Factory.get().newReleaseId(getGroupId(), getArtifactId(), getVersion());
 	}

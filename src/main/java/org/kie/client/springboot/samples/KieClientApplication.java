@@ -19,13 +19,11 @@ public class KieClientApplication {
     @Bean
     CommandLineRunner deployAndValidate() {
         return new CommandLineRunner() {
-
             @Override
             public void run(String... strings) {
                 //execute this to setup a test kie env: docker run -p 8080:8080 -p 8001:8001 -d --name jbpm-workbench jboss/jbpm-workbench-showcase:7.15.0.Final && docker run -p 8180:8080 -d --name kie-server --link jbpm-workbench:kie-wb jboss/kie-server-showcase:7.15.0.Final  && docker logs -f kie-server
                 LOGGER.info("KieClient started");
             }
-
         };
     }
     

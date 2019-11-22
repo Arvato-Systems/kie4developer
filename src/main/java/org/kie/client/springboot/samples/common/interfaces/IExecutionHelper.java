@@ -9,12 +9,11 @@ import org.springframework.stereotype.Component;
  * @param <TaskSummery> the TaskSummery Implementation
  * @author TRIBE01
  */
-@Component
 public interface IExecutionHelper<TaskSummery> {
 
 	/**
 	 * Start a new Process Instance of the given Process
-	 * @param processId the deployment id (typical equal to the process id)
+	 * @param deploymentId the deployment id (typical equal to the process id)
 	 * @param processId the process id
 	 * @param params the process instance variables
 	 * @return the new process instance id

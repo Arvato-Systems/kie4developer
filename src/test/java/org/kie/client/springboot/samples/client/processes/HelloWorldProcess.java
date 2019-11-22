@@ -34,11 +34,8 @@ public class HelloWorldProcess implements IDeployableBPMNProcess {
 	}
 
 	@Override
-	public HashMap<String, IDeployableWorkItemHandler> getWorkItemHandlers() {
-		HashMap<String,IDeployableWorkItemHandler> workitemhandler = new HashMap<>();
-		HelloWorldWorkItemHandler helloWorldWorkItemHandler = new HelloWorldWorkItemHandler();
-		workitemhandler.put(helloWorldWorkItemHandler.getName(), helloWorldWorkItemHandler);
-		return workitemhandler;
+	public File getJarFile() {
+		return null;
 	}
 
 	@Override
@@ -89,16 +86,6 @@ public class HelloWorldProcess implements IDeployableBPMNProcess {
 		Resource res = ResourceFactory.newByteArrayResource(XmlBPMNProcessDumper.INSTANCE.dump(process).getBytes());
 		res.setSourcePath(getProcessId()+".bpmn2"); // source path or target path must be set to be added into kbase
 		return res;
-	}
-
-	@Override
-	public File getJarFile() {
-		return null;
-	}
-
-	@Override
-	public File getPomFile() {
-		return null;
 	}
 
 }

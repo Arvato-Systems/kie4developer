@@ -1,21 +1,13 @@
 package org.kie.client.springboot.samples.common.interfaces;
 
 import java.io.File;
-import java.util.HashMap;
 import org.kie.api.io.Resource;
-import org.kie.api.runtime.process.WorkItemHandler;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * Interface to define a new BPMN Process
  * @author TRIBE01
  */
-@Component
 public interface IDeployableBPMNProcess {
-
-	@Autowired
-	IRelease release = null;
 
 	/**
 	 * Get the name of the Process
@@ -49,23 +41,11 @@ public interface IDeployableBPMNProcess {
 
 	/**
 	 * Check if the process is distributed as jar (true) or as in in-memory file (false)
-	 * if distributed as jar {@link #getJarFile()} and {@link #getPomFile()} can be used to retrieve the process.
+	 * if distributed as jar {@link #getJarFile()} can be used to retrieve the process.
 	 * if distributed as in-memory file {@link #getBPMNModel()} can be used to retrieve the process.
 	 * @return true if process files were provided as jar file
 	 */
 	boolean isDistributedAsJar();
-
-	/**
-	 * Check if the process needs workitemhandlers
-	 * @return true if workitemhandler are required for the process
-	 */
-	default boolean hasWorkItemHandler(){ return getWorkItemHandlers() != null && getWorkItemHandlers().size() > 0;};
-
-	/**
-	 * Get the list of workitemhandlers for the process
-	 * @return the list of workitemhandlers
-	 */
-	HashMap<String,IDeployableWorkItemHandler> getWorkItemHandlers();
 
 	/**
 	 * Get the BPMN Process Model that can be used for deployment
@@ -78,11 +58,5 @@ public interface IDeployableBPMNProcess {
 	 * @return the .jar file
 	 */
 	File getJarFile();
-
-	/**
-	 * Get the pom file for the BPMN Process Model
-	 * @return the .pom file
-	 */
-	File getPomFile();
 
 }

@@ -1,13 +1,16 @@
 package org.kie.client.springboot.samples.client;
 
 import java.io.File;
+import java.util.List;
 import org.kie.client.springboot.samples.client.kjar.JarUploader;
 import org.kie.client.springboot.samples.client.kjar.KJarBuilder;
 import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
+import org.kie.client.springboot.samples.common.interfaces.IDeployableWorkItemHandler;
 import org.kie.client.springboot.samples.common.interfaces.IDeploymentHelper;
 import org.kie.client.springboot.samples.common.interfaces.IRelease;
 import org.kie.server.api.model.KieContainerResource;
 import org.kie.server.api.model.KieServiceResponse.ResponseType;
+import org.kie.server.api.model.ReleaseId;
 import org.kie.server.api.model.ServiceResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,12 +23,6 @@ import org.springframework.stereotype.Component;
 public class KieClientDeploymentHelper implements IDeploymentHelper {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(KieClientDeploymentHelper.class);
-  private IDeployableBPMNProcess processToDeploy;
-  @Autowired
-  private KieClient kieClient;
-  @Autowired
-  private IRelease release;
-
   @Value("${kieworkbench.protocol}")
   private String workbenchProtocol;
   @Value("${kieworkbench.host}")
@@ -40,17 +37,25 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private String workbenchUser;
   @Value("${kieworkbench.pwd}")
   private String workbenchPassword;
-
+  @Autowired
+  private KieClient kieClient;
+  @Autowired
+  private IRelease release;
+  @Autowired
+  private KJarBuilder kJarBuilder;
+  @Autowired
+  private JarUploader jarUploader;
+  private IDeployableBPMNProcess processToDeploy;
+  private List<IDeployableWorkItemHandler> workItemHandlerToDeploy;
 
   @Override
-  public IRelease getRelease() {
-    return release;
-  }
+  public IRelease getRelease() { return release; }
 
   @Override
-  public void setProcessToDeploy(IDeployableBPMNProcess processToDeploy) {
-    this.processToDeploy = processToDeploy;
-  }
+  public void setProcessToDeploy(IDeployableBPMNProcess processToDeploy) { this.processToDeploy = processToDeploy; }
+
+  @Override
+  public void setWorkItemHandler(List<IDeployableWorkItemHandler> workItemHandlerToDeploy) { this.workItemHandlerToDeploy = workItemHandlerToDeploy; }
 
   @Override
   public boolean deploy() {
@@ -58,19 +63,10 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     deployJarIfExist();
 
     // send deployment command to server
-    String containerId = getRelease().getContainerId();
-    org.kie.server.api.model.ReleaseId releaseId = getRelease().getReleaseIdForServerAPI();
-
+    String containerId = release.getContainerId();
+    ReleaseId releaseId = release.getReleaseIdForServerAPI();
     KieContainerResource resource = new KieContainerResource(containerId, releaseId);
-    // set runtime strategy to PER_PROCESS_INSTANCE
-//		KieServerConfigItem config = new KieServerConfigItem();
-//		config.setName(KieServerConstants.PCFG_RUNTIME_STRATEGY);
-//		config.setType(KieServerConstants.CAPABILITY_BPM);
-//		config.setValue("PER_PROCESS_INSTANCE");
-//		resource.addConfigItem(config);
-
-    ServiceResponse<KieContainerResource> createResponse = kieClient.getKieServicesClient()
-        .createContainer(containerId, resource);
+    ServiceResponse<KieContainerResource> createResponse = kieClient.getKieServicesClient().createContainer(containerId, resource);
     if (createResponse.getType() == ResponseType.FAILURE) {
       LOGGER.error("Error creating " + containerId + ". Message: " + createResponse.getMsg());
       return false;
@@ -82,18 +78,15 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 
   /**
    * Deploy a kjar into the Server Container
-   *
    * @see {https://developers.redhat.com/blog/2018/03/14/what-is-a-kjar/}
    */
   private void deployJarIfExist() {
     File jarFile = processToDeploy.getJarFile();
-    //File pomFile = processToDeploy.getPomFile();
 
     if (!processToDeploy.isDistributedAsJar()) {
       // in this case we have to build the kjar by our own first
-			KJarBuilder kJarBuilder = new KJarBuilder(release, processToDeploy);
 			try{
-        jarFile = kJarBuilder.buildKjar();
+        jarFile = kJarBuilder.buildKjar(processToDeploy, workItemHandlerToDeploy);
         //pomFile = kJarBuilder.buildPomXml();
       }catch (Exception e){
         throw new RuntimeException("Kjar or pom generation error", e);
@@ -111,9 +104,9 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     // extend the maven settings.xml on the kie-server to fetch artifacts from other repositories
 
     //Maven coordinates
-    String groupId = getRelease().getGroupId();
-    String artifactId = getRelease().getArtifactId();
-    String version = getRelease().getVersion();
+    String groupId = release.getGroupId();
+    String artifactId = release.getArtifactId();
+    String version = release.getVersion();
 
     String url = workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/"
         + workbenchMavenContext + "/" + groupId.replace('.', '/') + "/" + artifactId + "/" + version + "/" + artifactId
@@ -121,7 +114,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 
     ResponseEntity<String> response = null;
     try {
-      response = JarUploader.uploadFile(jarFile, url, workbenchUser, workbenchPassword);
+      response = jarUploader.uploadFile(jarFile, url, workbenchUser, workbenchPassword);
       if (response.getStatusCode().is2xxSuccessful()) {
         LOGGER.info("Jar file " + jarFile.getName() + " successful uploaded into workbench");
       }
@@ -131,12 +124,12 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   }
 
   /**
-   * Deploy a workitemhandler into the Server Container
-   *
+   * Deploy a jar (containing workitemhandler) into the Server Container
    * @see {https://developers.redhat.com/blog/2018/03/14/what-is-a-kjar/}
    */
   private void deployWorkItemHandlerIfExist() {
-    processToDeploy.getWorkItemHandlers().forEach((workItemHandlerName, workItemHandler) -> {
+    if (workItemHandlerToDeploy != null){
+      for (IDeployableWorkItemHandler workItemHandler : workItemHandlerToDeploy) {
         File jarFile = workItemHandler.getWorkItemHandlerJarFile();
 
         //Maven coordinates
@@ -145,36 +138,33 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
         String version = workItemHandler.getVersion();
         String url = workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/"
             + workbenchMavenContext + "/" + groupId.replace('.', '/') + "/" + artifactId + "/" + version + "/"
-          + artifactId + "-" + version + ".jar";
+            + artifactId + "-" + version + ".jar";
 
-      try {
-        ResponseEntity<String> response = JarUploader.uploadFile(jarFile, url, workbenchUser, workbenchPassword);
-        if (response.getStatusCode().is2xxSuccessful()) {
-          LOGGER.info("Jar file " + jarFile.getName() + " successful uploaded into workbench");
-        }
-      } catch (Exception e) {
-        LOGGER.error("Error while jar file upload", e);
-        throw e;
+        ResponseEntity<String> response = jarUploader.uploadFile(jarFile, url, workbenchUser, workbenchPassword);
+        LOGGER.info("Jar file " + jarFile.getName() + " successful (status: " + response.getStatusCode()
+            + ") uploaded into workbench");
       }
-    });
+    }
   }
 
   @Override
   public boolean undeploy() {
-    String containerId = getRelease().getContainerId();
+    // send deployment command to server
+    String containerId = release.getContainerId();
     KieContainerResource container = kieClient.getKieServicesClient().getContainerInfo(containerId).getResult();
+    boolean result = false;
     if (container != null) {
       ServiceResponse<Void> responseDispose = kieClient.getKieServicesClient().disposeContainer(containerId);
       if (responseDispose.getType() == ResponseType.FAILURE) {
         LOGGER.error("Error disposing " + containerId + ". Message: " + responseDispose.getMsg());
-        return false;
       } else {
         LOGGER.info("Container disposed: " + containerId + ". ");
         undeployJarIfExist();
+        undeployWorkItemHandlerIfExist();
+        result = true;
       }
-      return true;
     }
-    return false;
+    return result;
   }
 
   /**
@@ -182,8 +172,15 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
    */
   private void undeployJarIfExist() {
     if (processToDeploy.isDistributedAsJar()) {
-      // removing jars from the server repo isn't possible
+      LOGGER.warn("removing jars from the server repo isn't possible.");
     }
+  }
+
+  /**
+   * Undeploy a jar (containing workitemhandler) from the Server
+   */
+  private void undeployWorkItemHandlerIfExist() {
+    LOGGER.warn("removing jars from the server repo isn't possible.");
   }
 
 }

@@ -3,15 +3,19 @@ package org.kie.client.springboot.samples.client;
 import java.util.List;
 import java.util.Map;
 
+import org.kie.client.springboot.samples.client.kjar.KJarBuilder;
 import org.kie.server.api.model.instance.TaskSummary;
 import org.kie.client.springboot.samples.common.interfaces.IExecutionHelper;
 import org.kie.client.springboot.samples.common.interfaces.IRelease;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class KieClientExecutionHelper implements IExecutionHelper<TaskSummary> {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(KieClientExecutionHelper.class);
 	@Autowired
 	private IRelease release;
 	@Autowired
@@ -19,7 +23,9 @@ public class KieClientExecutionHelper implements IExecutionHelper<TaskSummary> {
 
 	@Override
 	public Long startNewProcessInstance(String deploymentId, String processId, Map<String, Object> params) {
-		// attention: deploymentId has to be the containerId for deployment via REST Client
+		if (!deploymentId.equals(release.getContainerId())){
+			throw new RuntimeException("deploymentId '" + deploymentId + "' has to be equals to containerId '"+release.getContainerId()+"' for deployment via REST Client!");
+		}
 		return kieClient.getProcessClient().startProcess(deploymentId, processId, params);
 	}
 

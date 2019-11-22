@@ -12,12 +12,15 @@ import org.kie.server.client.UIServicesClient;
 import org.kie.server.client.UserTaskServicesClient;
 import org.kie.server.client.admin.ProcessAdminServicesClient;
 import org.kie.server.client.admin.UserTaskAdminServicesClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class KieClient {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(KieClient.class);
 	// kie server connection parameter
 	@Value("${kieserver.location}")
 	private String kieServerUrl;
@@ -26,7 +29,6 @@ public class KieClient {
 	@Value("${kieserver.pwd}")
 	private String kieServerPwd;
 	private Integer connectionTimeout = 60000; //60s
-
 	// kie server client
 	private KieServicesClient kieServicesClient;
 	// normal clients
