@@ -1,4 +1,4 @@
-package org.kie.client.springboot.samples.client.kjar;
+package org.kie.client.springboot.samples.common.kjar;
 
 import java.io.File;
 import java.io.FileOutputStream;

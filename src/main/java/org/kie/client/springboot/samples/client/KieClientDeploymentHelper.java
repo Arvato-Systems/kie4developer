@@ -2,8 +2,8 @@ package org.kie.client.springboot.samples.client;
 
 import java.io.File;
 import java.util.List;
-import org.kie.client.springboot.samples.client.kjar.JarUploader;
-import org.kie.client.springboot.samples.client.kjar.KJarBuilder;
+import org.kie.client.springboot.samples.common.kjar.JarUploader;
+import org.kie.client.springboot.samples.common.kjar.KJarBuilder;
 import org.kie.client.springboot.samples.common.interfaces.IDeployableBPMNProcess;
 import org.kie.client.springboot.samples.common.interfaces.IDeployableWorkItemHandler;
 import org.kie.client.springboot.samples.common.interfaces.IDeploymentHelper;
