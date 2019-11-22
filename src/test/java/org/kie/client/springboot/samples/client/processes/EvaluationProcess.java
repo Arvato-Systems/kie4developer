@@ -14,7 +14,7 @@ public class EvaluationProcess implements IDeployableBPMNProcess {
 	private final String VERSION = "1.0.0";
 	private final String PROCESSNAME = "evaluation"; // comes from the xml
 	private final String PACKAGENAME = "org.jbpm.test"; // comes from the xml
-	private final String BPMN_FILE = "src/test/resources/kjars/evaluation/evaluation.bpmn2";
+	private final String BPMN_FILE = "src/test/resources/processdefinitions/evaluation.bpmn2";
 
 	@Override
 	public String getVersion() {

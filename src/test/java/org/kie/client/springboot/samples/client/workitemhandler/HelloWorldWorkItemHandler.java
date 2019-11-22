@@ -23,7 +23,7 @@ public class HelloWorldWorkItemHandler implements WorkItemHandler, IDeployableWo
 	private static final Logger LOGGER = LoggerFactory.getLogger(HelloWorldWorkItemHandler.class);
 
 	private final String VERSION = "1.0.0";
-	private final String WORKITEMHANDLER_FILE = "src/test/resources/HelloWorldWorkItemHandler-1.0.0.jar";
+	private final String WORKITEMHANDLER_FILE = "src/test/resources/workitemhandlers/HelloWorldWorkItemHandler-1.0.0.jar";
 
 	@Override
 	public String getVersion() {
