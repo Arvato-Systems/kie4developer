@@ -1,5 +1,6 @@
 package org.kie.client.springboot.samples.client;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -46,10 +47,11 @@ public class KieClientTest2 {
     @Test
 		public void testDeployableBPMNProcessAsKjar() {
 		// 1. create a new process
-		IDeployableBPMNProcess processToDeploy = new EvaluationProcess();
+		List<IDeployableBPMNProcess> processToDeploy = new ArrayList<>();
+		processToDeploy.add(new EvaluationProcess());
 
     // 2. deploy a the process to the server
-		clientDeploymentHelper.setProcessToDeploy(processToDeploy);
+		clientDeploymentHelper.setProcessesToDeploy(processToDeploy);
 		clientDeploymentHelper.deploy();
 
 		// 3. execute the process
@@ -57,7 +59,7 @@ public class KieClientTest2 {
 		params.put("employee", "john");
 		params.put("reason", "test on spring boot");
 
-		Long processInstanceId = clientExecutionHelper.startNewProcessInstance(clientDeploymentHelper.getRelease().getContainerId(), processToDeploy.getProcessId(), params);
+		Long processInstanceId = clientExecutionHelper.startNewProcessInstance(clientDeploymentHelper.getRelease().getContainerId(), processToDeploy.get(0).getProcessId(), params);
 			LOGGER.info("Started new process with process instance id " + processInstanceId);
 
 		//4. show some useful information from the server

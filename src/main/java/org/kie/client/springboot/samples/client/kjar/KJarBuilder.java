@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import org.drools.compiler.kie.builder.impl.InternalKieModule;
 import org.kie.api.KieServices;
@@ -34,13 +35,13 @@ public class KJarBuilder {
 
   /**
    * Build the Kjar with
-   * @param processToDeploy  he related processes
+   * @param deployableProcesses the related processes
    * @param deployableWorkitemhandlers the related workitemhandlers
    * @return the kjar file
    * @throws IOException on any I/O Exceptions
    * @throws RuntimeException if compilation fails
    */
-  public File buildKjar(IDeployableBPMNProcess processToDeploy, List<IDeployableWorkItemHandler> deployableWorkitemhandlers) {
+  public File buildKjar(List<IDeployableBPMNProcess> deployableProcesses, List<IDeployableWorkItemHandler> deployableWorkitemhandlers) {
     // create the Kmodule alias Kjar
     KieServices ks = KieServices.Factory.get();
     KieFileSystem kfs = ks.newKieFileSystem();
@@ -60,7 +61,10 @@ public class KJarBuilder {
     Resource persistenceXmlResource = ResourceFactory.newByteArrayResource(persistenceXml.getBytes()).setSourcePath("META-INF/persistence.xml");
     Resource pomXmlResource = ResourceFactory.newByteArrayResource(pomXml.getBytes()).setSourcePath("META-INF/maven/"+release.getGroupId()+"/"+release.getArtifactId()+"/pom.xml");
     Resource pomPropertiesResource = ResourceFactory.newByteArrayResource(pomProperties.getBytes()).setSourcePath("META-INF/maven/"+release.getGroupId()+"/"+release.getArtifactId()+"/pom.properties");
-    Resource bpmnResource = processToDeploy.getBPMNModel(); // .bpmn
+    List<Resource> bpmnResources = new ArrayList<>();
+    for (IDeployableBPMNProcess deployableProcess : deployableProcesses){
+      bpmnResources.add(deployableProcess.getBPMNModel()); // .bpmn
+    }
 
     // write to kmodule
     kfs.write(deploymentDescriptorResource);
@@ -69,7 +73,9 @@ public class KJarBuilder {
     kfs.write(persistenceXmlResource);
     kfs.write(pomXmlResource);
     kfs.write(pomPropertiesResource);
-    kfs.write(bpmnResource);
+    for (Resource bpmnResource : bpmnResources){
+      kfs.write(bpmnResource);
+    }
 
     // build the kmodule
     KieBuilder builder = ks.newKieBuilder(kfs).buildAll();

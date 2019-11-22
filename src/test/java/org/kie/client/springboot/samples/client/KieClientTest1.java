@@ -43,13 +43,14 @@ public class KieClientTest1 {
 	@Test
 	public void testDeployableBPMNProcessAsClass() {
 		// 1. create a new process & set required workitemhandler
-		IDeployableBPMNProcess processToDeploy = new HelloWorldProcess();
+		List<IDeployableBPMNProcess> processToDeploy = new ArrayList<>();
+		processToDeploy.add(new HelloWorldProcess());
 		List<IDeployableWorkItemHandler> workItemHandlerToDeploy = new ArrayList<>();
 		workItemHandlerToDeploy.add(new HelloWorldWorkItemHandler());
 
 		// 2. deploy a the process & workitemhandler to the server
-		clientDeploymentHelper.setProcessToDeploy(processToDeploy);
-		clientDeploymentHelper.setWorkItemHandler(workItemHandlerToDeploy);
+		clientDeploymentHelper.setProcessesToDeploy(processToDeploy);
+		clientDeploymentHelper.setWorkItemHandlersToDeploy(workItemHandlerToDeploy);
 		clientDeploymentHelper.deploy();
 
 		// 3. execute the process
@@ -57,7 +58,7 @@ public class KieClientTest1 {
 		params.put("employee", "john");
 		params.put("reason", "test on spring boot");
 
-		Long processInstanceId = clientExecutionHelper.startNewProcessInstance(clientDeploymentHelper.getRelease().getContainerId(), processToDeploy.getProcessId(), params);
+		Long processInstanceId = clientExecutionHelper.startNewProcessInstance(clientDeploymentHelper.getRelease().getContainerId(), processToDeploy.get(0).getProcessId(), params);
 		LOGGER.info("Started new process with process instance id " + processInstanceId);
 
 		//4. show some useful information from the server

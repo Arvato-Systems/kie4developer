@@ -45,17 +45,17 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private KJarBuilder kJarBuilder;
   @Autowired
   private JarUploader jarUploader;
-  private IDeployableBPMNProcess processToDeploy;
-  private List<IDeployableWorkItemHandler> workItemHandlerToDeploy;
+  private List<IDeployableBPMNProcess> processesToDeploy;
+  private List<IDeployableWorkItemHandler> workItemHandlersToDeploy;
 
   @Override
   public IRelease getRelease() { return release; }
 
   @Override
-  public void setProcessToDeploy(IDeployableBPMNProcess processToDeploy) { this.processToDeploy = processToDeploy; }
+  public void setProcessesToDeploy(List<IDeployableBPMNProcess> processesToDeploy) { this.processesToDeploy = processesToDeploy; }
 
   @Override
-  public void setWorkItemHandler(List<IDeployableWorkItemHandler> workItemHandlerToDeploy) { this.workItemHandlerToDeploy = workItemHandlerToDeploy; }
+  public void setWorkItemHandlersToDeploy(List<IDeployableWorkItemHandler> workItemHandlerToDeploy) { this.workItemHandlersToDeploy = workItemHandlerToDeploy; }
 
   @Override
   public boolean deploy() {
@@ -81,11 +81,13 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
    * @see {https://developers.redhat.com/blog/2018/03/14/what-is-a-kjar/}
    */
   private void deployJarIfExist() {
-    File jarFile = processToDeploy.getJarFile();
-
-    if (!processToDeploy.isDistributedAsJar()) {
+    File jarFile;
+    // if we already have a existing jar let's simply take this //TODO: move this to the release level - a single process never comes as jar; this is always as kjar
+    if (processesToDeploy.size() == 1 && processesToDeploy.get(0).isDistributedAsJar()) {
+      jarFile = processesToDeploy.get(0).getJarFile();
+    }else {
       // in this case we have to build the kjar by our own first
-      jarFile = kJarBuilder.buildKjar(processToDeploy, workItemHandlerToDeploy);
+      jarFile = kJarBuilder.buildKjar(processesToDeploy, workItemHandlersToDeploy);
       LOGGER.info("Kjar created successfull: " + jarFile.getAbsolutePath());
     }
 
@@ -104,7 +106,8 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     String version = release.getVersion();
 
     String url = workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/"
-        + workbenchMavenContext + "/" + groupId.replace('.', '/') + "/" + artifactId + "/" + version + "/" + artifactId
+        + workbenchMavenContext + "/" + groupId.replace('.', '/') + "/" + artifactId + "/" + version + "/"
+        + artifactId
         + "-" + version + ".jar";
 
     try {
@@ -113,7 +116,8 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
         LOGGER.info("Jar file " + jarFile.getName() + " successful uploaded into workbench");
       }
     } catch (Exception e) {
-      throw new RuntimeException("Error while jar file upload. This could be also caused by missing dependencies.", e);
+      throw new RuntimeException("Error while jar file upload. This could be also caused by missing dependencies.",
+          e);
     }
   }
 
@@ -122,14 +126,14 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
    * @see {https://developers.redhat.com/blog/2018/03/14/what-is-a-kjar/}
    */
   private void deployWorkItemHandlerIfExist() {
-    if (workItemHandlerToDeploy != null){
-      for (IDeployableWorkItemHandler workItemHandler : workItemHandlerToDeploy) {
-        File jarFile = workItemHandler.getWorkItemHandlerJarFile();
+    if (workItemHandlersToDeploy != null){
+      for (IDeployableWorkItemHandler workItemHandlerToDeploy : workItemHandlersToDeploy) {
+        File jarFile = workItemHandlerToDeploy.getWorkItemHandlerJarFile();
 
         //Maven coordinates
-        String groupId = workItemHandler.getPackage();
-        String artifactId = workItemHandler.getName();
-        String version = workItemHandler.getVersion();
+        String groupId = workItemHandlerToDeploy.getPackage();
+        String artifactId = workItemHandlerToDeploy.getName();
+        String version = workItemHandlerToDeploy.getVersion();
         String url = workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/"
             + workbenchMavenContext + "/" + groupId.replace('.', '/') + "/" + artifactId + "/" + version + "/"
             + artifactId + "-" + version + ".jar";
@@ -165,7 +169,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
    * Undeploy a kjar from the Server
    */
   private void undeployJarIfExist() {
-    if (processToDeploy.isDistributedAsJar()) {
+    for (IDeployableBPMNProcess processToDeploy : processesToDeploy){
       LOGGER.warn("removing jars from the server repo isn't possible.");
     }
   }
@@ -174,7 +178,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
    * Undeploy a jar (containing workitemhandler) from the Server
    */
   private void undeployWorkItemHandlerIfExist() {
-    if (workItemHandlerToDeploy != null){
+    if (workItemHandlersToDeploy != null){
       LOGGER.warn("removing jars from the server repo isn't possible.");
     }
   }

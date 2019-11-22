@@ -19,15 +19,15 @@ public interface IDeploymentHelper {
 
 	/**
 	 * Define the Process(es) you want to deploy on the Server
-	 * @param processToDeploy process to deploy
+	 * @param processesToDeploy process to deploy
 	 */
-	void setProcessToDeploy(IDeployableBPMNProcess processToDeploy); //TODO: make it possible to deploy multiple processes
+	void setProcessesToDeploy(List<IDeployableBPMNProcess> processesToDeploy);
 
 	/**
 	 * Define the Workitemhandler(s) you want to deploy on the Server
 	 * @param workItemHandlerToDeploy workitemhandler to deploy
 	 */
-	void setWorkItemHandler(List<IDeployableWorkItemHandler> workItemHandlerToDeploy);
+	void setWorkItemHandlersToDeploy(List<IDeployableWorkItemHandler> workItemHandlerToDeploy);
 
 	/**
 	 * Deploy all given Processes into the Server Container
