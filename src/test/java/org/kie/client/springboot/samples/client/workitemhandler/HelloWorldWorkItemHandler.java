@@ -1,6 +1,5 @@
 package org.kie.client.springboot.samples.client.workitemhandler;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import org.kie.api.runtime.process.WorkItem;
@@ -23,16 +22,10 @@ public class HelloWorldWorkItemHandler implements WorkItemHandler, IDeployableWo
 	private static final Logger LOGGER = LoggerFactory.getLogger(HelloWorldWorkItemHandler.class);
 
 	private final String VERSION = "1.0.0";
-	private final String WORKITEMHANDLER_FILE = "src/test/resources/workitemhandlers/HelloWorldWorkItemHandler-1.0.0.jar";
 
 	@Override
 	public String getVersion() {
 		return VERSION;
-	}
-
-	@Override
-	public File getWorkItemHandlerJarFile() {
-		return new File(WORKITEMHANDLER_FILE);
 	}
 
 	@Override

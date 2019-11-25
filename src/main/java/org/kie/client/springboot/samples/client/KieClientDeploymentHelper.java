@@ -59,7 +59,6 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 
   @Override
   public boolean deploy() {
-    deployWorkItemHandlerIfExist();
     deployJarIfExist();
 
     // send deployment command to server
@@ -122,30 +121,6 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     }
   }
 
-  /**
-   * Deploy a jar (containing workitemhandler) into the Server Container
-   * @see {https://developers.redhat.com/blog/2018/03/14/what-is-a-kjar/}
-   */
-  private void deployWorkItemHandlerIfExist() {
-    if (workItemHandlersToDeploy != null){
-      for (IDeployableWorkItemHandler workItemHandlerToDeploy : workItemHandlersToDeploy) {
-        File jarFile = workItemHandlerToDeploy.getWorkItemHandlerJarFile();
-
-        //Maven coordinates
-        String groupId = workItemHandlerToDeploy.getPackage();
-        String artifactId = workItemHandlerToDeploy.getName();
-        String version = workItemHandlerToDeploy.getVersion();
-        String url = workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/"
-            + workbenchMavenContext + "/" + groupId.replace('.', '/') + "/" + artifactId + "/" + version + "/"
-            + artifactId + "-" + version + ".jar";
-
-        ResponseEntity<String> response = jarUploader.uploadFile(jarFile, url, workbenchUser, workbenchPassword);
-        LOGGER.info("Jar file " + jarFile.getName() + " successful (status: " + response.getStatusCode()
-            + ") uploaded into workbench");
-      }
-    }
-  }
-
   @Override
   public boolean undeploy() {
     // send deployment command to server
@@ -159,7 +134,6 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
       } else {
         LOGGER.info("Container disposed: " + containerId + ". ");
         undeployJarIfExist();
-        undeployWorkItemHandlerIfExist();
         result = true;
       }
     }
@@ -171,15 +145,6 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
    */
   private void undeployJarIfExist() {
     LOGGER.warn("removing jars from the server repo isn't possible.");
-  }
-
-  /**
-   * Undeploy a jar (containing workitemhandler) from the Server
-   */
-  private void undeployWorkItemHandlerIfExist() {
-    if (workItemHandlersToDeploy != null){
-      LOGGER.warn("removing jars from the server repo isn't possible.");
-    }
   }
 
 }

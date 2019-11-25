@@ -1,6 +1,5 @@
 package org.kie.client.springboot.samples.common.interfaces;
 
-import java.io.File;
 import org.kie.api.runtime.process.WorkItemHandler;
 
 public interface IDeployableWorkItemHandler extends WorkItemHandler {
@@ -26,11 +25,5 @@ public interface IDeployableWorkItemHandler extends WorkItemHandler {
    * @return the version number
    */
   String getVersion();
-
-  /**
-   * Get the jar file that contains the WorkItemHandlers
-   * @return the .jar file
-   */
-  File getWorkItemHandlerJarFile();
 
 }

@@ -4,8 +4,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 import org.drools.compiler.kie.builder.impl.InternalKieModule;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieBuilder;
@@ -50,38 +56,70 @@ public class KJarBuilder {
     String deploymentDescriptor = buildDeploymentDescriptor(deployableWorkitemhandlers); // META-INF/kie-deployment-descriptor.xml
     String kmoduleInfo = buildKmoduleInfo(); // META-INF/kmodule.info
     String kmoduleXml = buildKmoduleXml(); // META-INF/kmodule.xml
+    String beansXml = buildBeansXml(deployableWorkitemhandlers); // META-INF/beans.xml
     String persistenceXml = buildPersistence(); // META-INF/persistence.xml
     String pomXml = buildPomXml(deployableWorkitemhandlers); // META-INF/maven/<project group id>/<project id>/pom.xml
     String pomProperties = buildPomProperties();  // META-INF/maven/<project group id>/<project id>/pom.properties
+
+    Map<String, File> deployableWorkitemhandlerFiles = new HashMap<>();
+    // compile workitemhandlers interface
+    String filepath = IDeployableWorkItemHandler.class.getName().replace(".","/") + ".class";
+    File classFile = new File (IDeployableWorkItemHandler.class.getProtectionDomain().getCodeSource().getLocation().getFile() + IDeployableWorkItemHandler.class.getName().replace(".","/") + ".class");
+    deployableWorkitemhandlerFiles.put(filepath, classFile);
+
+    // compile workitemhandlers
+    for (IDeployableWorkItemHandler deployableWorkitemhandler : deployableWorkitemhandlers){
+      filepath = deployableWorkitemhandler.getClass().getName().replace(".","/") + ".class";
+      classFile = new File (deployableWorkitemhandler.getClass().getProtectionDomain().getCodeSource().getLocation().getFile() + deployableWorkitemhandler.getClass().getName().replace(".","/") + ".class");
+      deployableWorkitemhandlerFiles.put(filepath, classFile);
+    }
 
     // convert to Resources
     Resource deploymentDescriptorResource = ResourceFactory.newByteArrayResource(deploymentDescriptor.getBytes()).setSourcePath("META-INF/kie-deployment-descriptor.xml");
     Resource kmoduleInfoResource = ResourceFactory.newByteArrayResource(kmoduleInfo.getBytes()).setSourcePath("META-INF/kmodule.info");
     Resource kmoduleXmlResource = ResourceFactory.newByteArrayResource(kmoduleXml.getBytes()).setSourcePath("META-INF/kmodule.xml");
     Resource persistenceXmlResource = ResourceFactory.newByteArrayResource(persistenceXml.getBytes()).setSourcePath("META-INF/persistence.xml");
+    Resource beansXmlResource = ResourceFactory.newByteArrayResource(beansXml.getBytes()).setSourcePath("META-INF/beans.xml");
     Resource pomXmlResource = ResourceFactory.newByteArrayResource(pomXml.getBytes()).setSourcePath("META-INF/maven/"+release.getGroupId()+"/"+release.getArtifactId()+"/pom.xml");
     Resource pomPropertiesResource = ResourceFactory.newByteArrayResource(pomProperties.getBytes()).setSourcePath("META-INF/maven/"+release.getGroupId()+"/"+release.getArtifactId()+"/pom.properties");
     List<Resource> bpmnResources = new ArrayList<>();
     for (IDeployableBPMNProcess deployableProcess : deployableProcesses){
       bpmnResources.add(deployableProcess.getBPMNModel()); // .bpmn
     }
+    List<Resource> workitemhandlerResources = new ArrayList<>();
+
+    for (Entry<String, File> deployableWorkitemhandlerFileSet : deployableWorkitemhandlerFiles.entrySet()){
+      try {
+        String filepathForKJar = deployableWorkitemhandlerFileSet.getKey();
+        File classFileForKJar = deployableWorkitemhandlerFileSet.getValue();
+        Resource deployableWorkitemhandlerResource = ResourceFactory.newByteArrayResource(Files.readAllBytes(classFileForKJar.toPath())).setSourcePath(filepathForKJar);//.setResourceType(ResourceType.JAVA);
+        workitemhandlerResources.add(deployableWorkitemhandlerResource);
+        } catch (IOException e) {
+         LOGGER.error("Error on reading workitemhandler class file", e);
+        }
+    }
 
     // write to kmodule
     kfs.write(deploymentDescriptorResource);
     kfs.write(kmoduleInfoResource);
     kfs.write(kmoduleXmlResource);
+    kfs.write(beansXmlResource);
     kfs.write(persistenceXmlResource);
     kfs.write(pomXmlResource);
     kfs.write(pomPropertiesResource);
     for (Resource bpmnResource : bpmnResources){
       kfs.write(bpmnResource);
     }
+    for (Resource workitemhandlerResource : workitemhandlerResources){
+      kfs.write(workitemhandlerResource);
+    }
 
     // build the kmodule
     KieBuilder builder = ks.newKieBuilder(kfs).buildAll();
 
     // remove the generated default pom
-    kfs.delete("META-INF/maven/org.default");
+    kfs.delete("META-INF/maven/org.default"); //TODO: check this, seems to not work
+
 
     // validate the Kmodule
     if (builder.getResults().hasMessages(Message.Level.ERROR)) {
@@ -101,6 +139,43 @@ public class KJarBuilder {
       throw new RuntimeException("Kjar write error", e);
     }
     return jarFile;
+  }
+
+  /**
+   * Build the beans.xml for the provided release
+   * @param deployableWorkitemhandlers the workitemhandler
+   * @return the beans.xml file content
+   */
+  private String buildBeansXml(List<IDeployableWorkItemHandler> deployableWorkitemhandlers) {
+    String beansXml = "<beans xmlns=\"http://java.sun.com/xml/ns/javaee\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://java.sun.com/xml/ns/javaee http://docs.jboss.org/cdi/beans_1_0.xsd\">\n"
+        + "  <alternatives>\n";
+    for (IDeployableWorkItemHandler workitemhandler : deployableWorkitemhandlers) {
+      beansXml+= "    <class>"+workitemhandler.getPackage() + "." +  workitemhandler.getName()+"</class>\n";
+    }
+    beansXml += "  </alternatives>\n"
+        + "</beans>";
+    return beansXml;
+  }
+
+  /**
+   * Compile a java source code file to a class file
+   * Requires JDK
+   * @param sourceFile the .java file
+   * @return the compiled class file
+   */
+  private File compileWorkItemHandler(File sourceFile) {
+   JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    if (compiler == null){
+      throw new RuntimeException("java class compilation need JDK and not only JRE!");
+    }
+    File classFile = new File(sourceFile.getParent() + File.separator + sourceFile.getName().replaceFirst("[.][^.]+$", "") + ".class");
+    int compilationResult = compiler.run(null, null, null, sourceFile.getPath());
+    if (compilationResult != 0){
+      throw new RuntimeException("Compilation of  '"+sourceFile+"' failed");
+    }else{
+      LOGGER.info("Compilation of  '"+sourceFile+"' successful");
+   }
+   return classFile;
   }
 
   /**
@@ -208,52 +283,19 @@ public class KJarBuilder {
         + "  <name>"+release.getProjectName()+"</name>\n"
         + "  <description>"+release.getProjectDescription()+"</description>\n"
         + "  <dependencies>\n"
-//        + "    <dependency>\n"
-//        + "      <groupId>com.thoughtworks.xstream</groupId>\n"
-//        + "      <artifactId>xstream</artifactId>\n"
-//        + "      <version>1.4.10</version>\n"
-//        + "      <scope>test</scope>\n"
-//        + "    </dependency>\n"
         + "    <dependency>\n"
         + "      <groupId>org.kie</groupId>\n"
         + "      <artifactId>kie-internal</artifactId>\n"
         + "      <version>7.15.0.Final</version>\n"
         + "      <scope>provided</scope>\n"
         + "    </dependency>\n"
-//        + "    <dependency>\n"
-//        + "      <groupId>org.optaplanner</groupId>\n"
-//        + "      <artifactId>optaplanner-core</artifactId>\n"
-//        + "      <version>7.15.0.Final</version>\n"
-//        + "      <scope>provided</scope>\n"
-//        + "    </dependency>\n"
-//        + "    <dependency>\n"
-//        + "      <groupId>junit</groupId>\n"
-//        + "      <artifactId>junit</artifactId>\n"
-//        + "      <version>4.12</version>\n"
-//        + "      <scope>test</scope>\n"
-//        + "    </dependency>\n"
-//        + "    <dependency>\n"
-//        + "      <groupId>org.optaplanner</groupId>\n"
-//        + "      <artifactId>optaplanner-persistence-jaxb</artifactId>\n"
-//        + "      <version>7.15.0.Final</version>\n"
-//        + "      <scope>provided</scope>\n"
-//        + "    </dependency>\n"
         + "    <dependency>\n"
         + "      <groupId>org.kie</groupId>\n"
         + "      <artifactId>kie-api</artifactId>\n"
         + "      <version>7.15.0.Final</version>\n"
         + "      <scope>provided</scope>\n"
-        + "    </dependency>\n";
-
-    for (IDeployableWorkItemHandler workitemhandler : deployableWorkitemhandlers) {
-      pomXml+= "    <dependency>\n"
-            + "      <groupId>"+workitemhandler.getPackage()+"</groupId>\n"
-            + "      <artifactId>"+workitemhandler.getName()+"</artifactId>\n"
-            + "      <version>1.0.0</version>\n"
-            + "      <scope>compile</scope>\n"
-            + "    </dependency>\n";
-    }
-  pomXml+= "  </dependencies>\n"
+        + "    </dependency>\n"
+        + "  </dependencies>\n"
         + "  <build>\n"
         + "    <plugins>\n"
         + "      <plugin>\n"

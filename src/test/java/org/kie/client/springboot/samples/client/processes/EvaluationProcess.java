@@ -32,23 +32,6 @@ public class EvaluationProcess implements IDeployableBPMNProcess {
 		Resource res = ResourceFactory.newFileResource(BPMN_FILE);
 		res.setSourcePath(getProcessId()+".bpmn2"); // source path or target path must be set to be added into kbase
 		return res;
-
-//CODE to get the BPMN file ou of the jar module file
-//		Resource res = null;
-//		try {
-//			FileInputStream fis = new FileInputStream(KJAR_FILE);
-//			ZipInputStream zis = new ZipInputStream(new BufferedInputStream(fis));
-//			ZipEntry entry;
-//			while ((entry = zis.getNextEntry()) != null) {
-//				if (entry.getName().equals(BPMN_FILE)) {
-//					res = ResourceFactory.newInputStreamResource(zis);
-//					res.setSourcePath(BPMN_FILE); // source path or target path must be set to be added into kbase
-//				}
-//			}
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-//		return res;
 	}
 
 }
