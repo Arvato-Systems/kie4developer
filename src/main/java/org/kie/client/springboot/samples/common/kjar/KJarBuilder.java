@@ -4,14 +4,18 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+import java.util.stream.Stream;
 import org.drools.compiler.kie.builder.impl.InternalKieModule;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieBuilder;
@@ -92,11 +96,11 @@ public class KJarBuilder {
       try {
         String filepathForKJar = deployableWorkitemhandlerFileSet.getKey();
         File classFileForKJar = deployableWorkitemhandlerFileSet.getValue();
-        Resource deployableWorkitemhandlerResource = ResourceFactory.newByteArrayResource(Files.readAllBytes(classFileForKJar.toPath())).setSourcePath(filepathForKJar);//.setResourceType(ResourceType.JAVA);
+        Resource deployableWorkitemhandlerResource = ResourceFactory.newByteArrayResource(Files.readAllBytes(classFileForKJar.toPath())).setSourcePath(filepathForKJar);
         workitemhandlerResources.add(deployableWorkitemhandlerResource);
-        } catch (IOException e) {
-         LOGGER.error("Error on reading workitemhandler class file", e);
-        }
+      } catch (IOException e) {
+       LOGGER.error("Error on reading workitemhandler class file", e);
+      }
     }
 
     // write to kmodule
@@ -117,10 +121,6 @@ public class KJarBuilder {
     // build the kmodule
     KieBuilder builder = ks.newKieBuilder(kfs).buildAll();
 
-    // remove the generated default pom
-    kfs.delete("META-INF/maven/org.default"); //TODO: check this, seems to not work
-
-
     // validate the Kmodule
     if (builder.getResults().hasMessages(Message.Level.ERROR)) {
       LOGGER.error("Process compilation error: " + builder.getResults().getMessages().toString());
@@ -138,7 +138,39 @@ public class KJarBuilder {
     } catch (IOException e) {
       throw new RuntimeException("Kjar write error", e);
     }
+
+    // TODO refactor this, so that this files don't getting generated when building the kmodule
+    // remove the generated default pom & src folder
+    Map<String, String> zip_properties = new HashMap<>();
+    zip_properties.put("create", "false");
+    try(FileSystem zipfs = FileSystems.newFileSystem(URI.create("jar:" + jarFile.toURI()), zip_properties)) {
+      delete(zipfs.getPath("META-INF/maven/org.default"));
+      delete(zipfs.getPath("src"));
+    } catch (IOException e) {
+      throw new RuntimeException("Kjar write error", e);
+    }
+
     return jarFile;
+  }
+
+  private void delete(Path path) throws IOException {
+    if (path == null || !Files.exists(path)) {
+      return;
+    }
+
+    if (Files.isDirectory(path)) {
+      Stream<Path> children = Files.list(path);
+      children.forEach(child -> {
+        try {
+          delete(child);
+        } catch (IOException e) {
+          throw new RuntimeException("Kjar write error", e);
+        }
+      });
+    }
+
+    System.out.println("delete: " + path);
+    Files.delete(path);
   }
 
   /**
@@ -155,27 +187,6 @@ public class KJarBuilder {
     beansXml += "  </alternatives>\n"
         + "</beans>";
     return beansXml;
-  }
-
-  /**
-   * Compile a java source code file to a class file
-   * Requires JDK
-   * @param sourceFile the .java file
-   * @return the compiled class file
-   */
-  private File compileWorkItemHandler(File sourceFile) {
-   JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-    if (compiler == null){
-      throw new RuntimeException("java class compilation need JDK and not only JRE!");
-    }
-    File classFile = new File(sourceFile.getParent() + File.separator + sourceFile.getName().replaceFirst("[.][^.]+$", "") + ".class");
-    int compilationResult = compiler.run(null, null, null, sourceFile.getPath());
-    if (compilationResult != 0){
-      throw new RuntimeException("Compilation of  '"+sourceFile+"' failed");
-    }else{
-      LOGGER.info("Compilation of  '"+sourceFile+"' successful");
-   }
-   return classFile;
   }
 
   /**
