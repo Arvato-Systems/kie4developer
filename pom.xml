@@ -7,26 +7,83 @@
 		<artifactId>kie-spring-boot</artifactId>
 		<version>7.15.0.Final</version>
 	</parent>
-	<artifactId>kie-client-spring-boot-sample</artifactId>
 
-	<name>KIE Client :: Spring :: Boot :: Sample</name>
-	<description>KIE Client SpringBoot Sample (Use all KIE Server capabilities)</description>
+	<groupId>com.arvato</groupId>
+	<artifactId>kie4humans</artifactId>
+
+	<name>KIE4Humans - Work with KIE the easy way</name>
+	<description>Template Project to easily create KIE Workflow Projects and deploy them to a KIE Server</description>
 
 	<properties>
-		<start-class>org.kie.client.springboot.samples.KieClientApplication</start-class>
+		<start-class>com.arvato.kie4humans.KIE4HumansApplicationTest</start-class>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<version.swagger-ui>2.2.10</version.swagger-ui>
+		<version.spring-boot>1.5.9.RELEASE</version.spring-boot>
+		<version.swagger-jaxrs>1.5.24</version.swagger-jaxrs>
 	</properties>
 
-	<dependencies>
+	<!-- KIE-Server required libs -->
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.webjars</groupId>
+				<artifactId>swagger-ui</artifactId>
+				<version>${version.swagger-ui}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.cxf</groupId>
+				<artifactId>cxf-rt-rs-service-description-swagger</artifactId>
+				<version>${version.cxf.jaxrs}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
+	<dependencies>
+		<!-- KIE Server starter -->
+		<dependency>
+			<groupId>org.kie</groupId>
+			<artifactId>kie-server-spring-boot-starter</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
+			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
+		<!-- extra dependencies for swagger -->
+		<dependency>
+			<groupId>org.webjars</groupId>
+			<artifactId>swagger-ui</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.cxf</groupId>
+			<artifactId>cxf-rt-rs-service-description-swagger</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.swagger</groupId>
+			<artifactId>swagger-jaxrs</artifactId>
+			<version>${version.swagger-jaxrs}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>javax.ws.rs</groupId>
+					<artifactId>jsr311-api</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<!-- KIE-Server client lib -->
 		<dependency>
 			<groupId>org.kie.server</groupId>
 			<artifactId>kie-server-client</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.jboss.spec.javax.ws.rs</groupId>
+					<artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
+
+		<!-- BPM fluent api lib -->
 		<dependency>
 			<groupId>org.jbpm</groupId>
 			<artifactId>jbpm-flow</artifactId>
@@ -41,8 +98,73 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+			<exclusions>
+				<!-- exclude libs that come with KIE-Server -->
+				<exclusion>
+					<groupId>net.minidev</groupId>
+					<artifactId>accessors-smart</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.vaadin.external.google</groupId>
+					<artifactId>android-json</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
-
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>enforce-direct-dependencies</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<fail>false</fail>
+						</configuration>
+					</execution>
+					<execution>
+						<id>no-managed-deps</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<phase>initialize</phase>
+						<configuration>
+							<rules>
+								<requireManagedDeps implementation="org.commonjava.maven.enforcer.rule.EnforceManagedDepsRule">
+									<checkProfiles>true</checkProfiles>
+									<failOnViolation>false</failOnViolation>
+								</requireManagedDeps>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+	<profiles>
+		<profile>
+			<id>h2</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>com.h2database</groupId>
+					<artifactId>h2</artifactId>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
 </project>
