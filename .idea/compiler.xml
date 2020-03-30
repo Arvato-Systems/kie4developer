@@ -6,9 +6,10 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="kie-client-spring-boot-sample" />
+        <module name="kie4developer" />
         <module name="kie4humans" />
         <module name="workflow-rdu-processes" />
-        <module name="kie-client-spring-boot-sample" />
         <module name="kie-server-spring-boot-sample" />
       </profile>
     </annotationProcessing>
@@ -17,6 +18,7 @@
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="kie-client-spring-boot-sample" options="-Xlint:unchecked" />
       <module name="kie-server-spring-boot-sample" options="-Xlint:unchecked" />
+      <module name="kie4developer" options="-Xlint:unchecked" />
       <module name="kie4humans" options="-Xlint:unchecked" />
     </option>
   </component>
