@@ -1,4 +1,4 @@
-KIE4Humans - Work with KIE the easy way
+KIE4Developer - Work with KIE the easy way
 ========================================
 
 This is a template project to easily create KIE Workflow Projects and deploy them to a external KIE Server (BICCW).

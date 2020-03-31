@@ -1,10 +1,8 @@
-package com.arvato.kie4humans.workitemhandler;
+package com.arvato.kie4developer.workitemhandler;
 
-import com.arvato.kie4humans.common.interfaces.IDeployableWorkItemHandler;
+import com.arvato.kie4developer.common.interfaces.IDeployableWorkItemHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Map;
 import org.kie.api.runtime.process.ProcessWorkItemHandlerException;
 import org.kie.api.runtime.process.WorkItem;

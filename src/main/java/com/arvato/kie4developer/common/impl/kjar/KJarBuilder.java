@@ -1,10 +1,10 @@
-package com.arvato.kie4humans.common.impl.kjar;
+package com.arvato.kie4developer.common.impl.kjar;
 
-import com.arvato.kie4humans.common.interfaces.IDeployableBPMNProcess;
-import com.arvato.kie4humans.common.interfaces.IDeployableDependency;
-import com.arvato.kie4humans.common.interfaces.IDeployableService;
-import com.arvato.kie4humans.common.interfaces.IDeployableWorkItemHandler;
-import com.arvato.kie4humans.common.interfaces.IRelease;
+import com.arvato.kie4developer.common.interfaces.IDeployableBPMNProcess;
+import com.arvato.kie4developer.common.interfaces.IDeployableDependency;
+import com.arvato.kie4developer.common.interfaces.IDeployableService;
+import com.arvato.kie4developer.common.interfaces.IDeployableWorkItemHandler;
+import com.arvato.kie4developer.common.interfaces.IRelease;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;

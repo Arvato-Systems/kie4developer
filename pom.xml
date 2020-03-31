@@ -9,13 +9,13 @@
 	</parent>
 
 	<groupId>com.arvato</groupId>
-	<artifactId>kie4humans</artifactId>
+	<artifactId>kie4developer</artifactId>
 
-	<name>KIE4Humans - Work with KIE the easy way</name>
+	<name>KIE4Developer - Work with KIE the easy way</name>
 	<description>Template Project to easily create KIE Workflow Projects and deploy them to a KIE Server</description>
 
 	<properties>
-		<start-class>com.arvato.kie4humans.KIE4HumansApplicationTest</start-class>
+		<start-class>com.arvato.kie4developer.KIE4DeveloperApplication</start-class>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<version.swagger-ui>2.2.10</version.swagger-ui>

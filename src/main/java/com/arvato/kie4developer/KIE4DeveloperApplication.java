@@ -1,20 +1,20 @@
-package com.arvato.kie4humans;
+package com.arvato.kie4developer;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 /**
- * KIE4Humans Application
+ * KIE4Developer Application
  *
  * @author TRIBE01
  */
 @SpringBootApplication
-@ComponentScan(basePackages = {"com.arvato.kie4humans"})
-public class KIE4HumansApplication {
+@ComponentScan(basePackages = {"com.arvato.kie4developer"})
+public class KIE4DeveloperApplication {
 
   public static void main(String[] args) {
-    SpringApplication.run(KIE4HumansApplication.class, args);
+    SpringApplication.run(KIE4DeveloperApplication.class, args);
   }
 
 }

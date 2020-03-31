@@ -1,8 +1,7 @@
-package com.arvato.kie4humans.common.interfaces;
+package com.arvato.kie4developer.common.interfaces;
 
 import java.util.List;
 import java.util.Map;
-import org.springframework.stereotype.Component;
 
 /**
  * Interface for execution handling of process instances and human tasks

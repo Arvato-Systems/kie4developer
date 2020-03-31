@@ -1,7 +1,7 @@
-package com.arvato.kie4humans.common.impl;
+package com.arvato.kie4developer.common.impl;
 
-import com.arvato.kie4humans.common.interfaces.IExecutionHelper;
-import com.arvato.kie4humans.common.interfaces.IRelease;
+import com.arvato.kie4developer.common.interfaces.IExecutionHelper;
+import com.arvato.kie4developer.common.interfaces.IRelease;
 import java.util.List;
 import java.util.Map;
 import org.kie.server.api.model.instance.TaskSummary;

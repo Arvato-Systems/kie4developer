@@ -1,4 +1,4 @@
-package com.arvato.kie4humans.common.interfaces;
+package com.arvato.kie4developer.common.interfaces;
 
 /**
  * Interface to define a Service class which handles business logic

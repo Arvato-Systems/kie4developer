@@ -6,11 +6,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="kie-client-spring-boot-sample" />
-        <module name="kie4developer" />
         <module name="kie4humans" />
-        <module name="workflow-rdu-processes" />
+        <module name="kie4developer" />
+        <module name="kie-client-spring-boot-sample" />
         <module name="kie-server-spring-boot-sample" />
+        <module name="workflow-rdu-processes" />
       </profile>
     </annotationProcessing>
   </component>

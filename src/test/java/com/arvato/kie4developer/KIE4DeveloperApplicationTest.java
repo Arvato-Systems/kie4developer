@@ -1,11 +1,11 @@
-package com.arvato.kie4humans;
+package com.arvato.kie4developer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.arvato.kie4humans.common.impl.KieClient;
+import com.arvato.kie4developer.common.impl.KieClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.kie.server.common.rest.NoEndpointFoundException;
@@ -21,7 +21,7 @@ import org.springframework.web.client.RestTemplate;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT)
-public class KIE4HumansApplicationTest {
+public class KIE4DeveloperApplicationTest {
 
   @Autowired
   private KieServer kieServer;
