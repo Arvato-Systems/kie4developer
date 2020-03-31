@@ -1,4 +1,4 @@
-package com.arvato.kie4developer.common.interfaces;
+package com.arvato.workflow.kie4developer.common.interfaces;
 
 import org.kie.api.runtime.process.WorkItemHandler;
 

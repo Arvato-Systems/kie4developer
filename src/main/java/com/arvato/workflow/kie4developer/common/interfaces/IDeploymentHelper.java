@@ -1,4 +1,4 @@
-package com.arvato.kie4developer.common.interfaces;
+package com.arvato.workflow.kie4developer.common.interfaces;
 
 import java.util.List;
 import org.kie.server.api.model.admin.MigrationReportInstance;

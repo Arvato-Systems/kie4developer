@@ -1,4 +1,4 @@
-package com.arvato.kie4developer.common.impl;
+package com.arvato.workflow.kie4developer.common.impl;
 
 import org.kie.server.api.marshalling.MarshallingFormat;
 import org.kie.server.client.DocumentServicesClient;

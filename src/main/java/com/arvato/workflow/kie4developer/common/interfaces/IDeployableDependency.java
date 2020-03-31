@@ -1,4 +1,4 @@
-package com.arvato.kie4developer.common.interfaces;
+package com.arvato.workflow.kie4developer.common.interfaces;
 
 /**
  * Interface to define a external lib which is required at runtime

@@ -1,11 +1,11 @@
-package com.arvato.kie4developer;
+package com.arvato.workflow.kie4developer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.arvato.kie4developer.common.impl.KieClient;
+import com.arvato.workflow.kie4developer.common.impl.KieClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.kie.server.common.rest.NoEndpointFoundException;

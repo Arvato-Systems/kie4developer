@@ -1,13 +1,13 @@
-package com.arvato.kie4developer.common.impl;
+package com.arvato.workflow.kie4developer.common.impl;
 
-import com.arvato.kie4developer.common.impl.kjar.JarUploader;
-import com.arvato.kie4developer.common.impl.kjar.KJarBuilder;
-import com.arvato.kie4developer.common.interfaces.IDeployableBPMNProcess;
-import com.arvato.kie4developer.common.interfaces.IDeployableDependency;
-import com.arvato.kie4developer.common.interfaces.IDeployableService;
-import com.arvato.kie4developer.common.interfaces.IDeployableWorkItemHandler;
-import com.arvato.kie4developer.common.interfaces.IDeploymentHelper;
-import com.arvato.kie4developer.common.interfaces.IRelease;
+import com.arvato.workflow.kie4developer.common.impl.kjar.JarUploader;
+import com.arvato.workflow.kie4developer.common.impl.kjar.KJarBuilder;
+import com.arvato.workflow.kie4developer.common.interfaces.IDeployableBPMNProcess;
+import com.arvato.workflow.kie4developer.common.interfaces.IDeployableDependency;
+import com.arvato.workflow.kie4developer.common.interfaces.IDeployableService;
+import com.arvato.workflow.kie4developer.common.interfaces.IDeployableWorkItemHandler;
+import com.arvato.workflow.kie4developer.common.interfaces.IDeploymentHelper;
+import com.arvato.workflow.kie4developer.common.interfaces.IRelease;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;

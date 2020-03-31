@@ -1,6 +1,6 @@
-package com.arvato.kie4developer.workitemhandler;
+package com.arvato.workflow.kie4developer.workitemhandler;
 
-import com.arvato.kie4developer.common.interfaces.IDeployableWorkItemHandler;
+import com.arvato.workflow.kie4developer.common.interfaces.IDeployableWorkItemHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;

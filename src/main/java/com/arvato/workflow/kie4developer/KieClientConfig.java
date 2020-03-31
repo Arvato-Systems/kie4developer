@@ -1,4 +1,4 @@
-package com.arvato.kie4developer;
+package com.arvato.workflow.kie4developer;
 
 import org.kie.server.api.KieServerConstants;
 import org.springframework.beans.factory.annotation.Value;

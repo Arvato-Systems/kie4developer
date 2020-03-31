@@ -1,4 +1,4 @@
-package com.arvato.kie4developer.common.impl.kjar;
+package com.arvato.workflow.kie4developer.common.impl.kjar;
 
 import java.io.File;
 import java.nio.charset.Charset;

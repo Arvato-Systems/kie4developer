@@ -8,14 +8,14 @@
 		<version>7.15.0.Final</version>
 	</parent>
 
-	<groupId>com.arvato</groupId>
+	<groupId>com.arvato.workflow</groupId>
 	<artifactId>kie4developer</artifactId>
 
 	<name>KIE4Developer - Work with KIE the easy way</name>
 	<description>Template Project to easily create KIE Workflow Projects and deploy them to a KIE Server</description>
 
 	<properties>
-		<start-class>com.arvato.kie4developer.KIE4DeveloperApplication</start-class>
+		<start-class>com.arvato.workflow.kie4developer.KIE4DeveloperApplication</start-class>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<version.swagger-ui>2.2.10</version.swagger-ui>

@@ -1,6 +1,6 @@
-package com.arvato.kie4developer.common.impl;
+package com.arvato.workflow.kie4developer.common.impl;
 
-import com.arvato.kie4developer.common.interfaces.IRelease;
+import com.arvato.workflow.kie4developer.common.interfaces.IRelease;
 import org.kie.api.KieServices;
 import org.kie.server.api.model.ReleaseId;
 import org.springframework.beans.factory.annotation.Value;
