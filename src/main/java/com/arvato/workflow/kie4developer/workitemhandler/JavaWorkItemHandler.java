@@ -35,12 +35,17 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
     String parameterType = (String) workItem.getParameters().get("methodParameterType"); // optional
     Object parameter = workItem.getParameters().get("methodParameter"); // optional
 
-    LOGGER.info("Try to execute Java Class {} with method {} with parameter type {} and parameter value {}", className,
-        methodName, parameterType, parameter);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER
+          .debug("Try to execute Java Class {} with method {} with parameter type {} and parameter value {}", className,
+              methodName, parameterType, parameter);
+    } else {
+      LOGGER.info("Try to execute Java Class {} with method {}", className, methodName);
+    }
 
     try {
       Class<?> c = Class.forName(className);
-      Object instance = c.newInstance();
+      Object instance = c.getConstructor().newInstance();
       Class<?>[] methodParameterTypes = null;
       Object[] params = null;
       if (parameter != null && parameterType != null) {

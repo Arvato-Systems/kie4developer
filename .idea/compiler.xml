@@ -9,8 +9,8 @@
         <module name="kie4humans" />
         <module name="kie4developer" />
         <module name="kie-client-spring-boot-sample" />
-        <module name="kie-server-spring-boot-sample" />
         <module name="workflow-rdu-processes" />
+        <module name="kie-server-spring-boot-sample" />
       </profile>
     </annotationProcessing>
   </component>
