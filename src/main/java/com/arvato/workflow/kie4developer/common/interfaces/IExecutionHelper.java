@@ -2,6 +2,7 @@ package com.arvato.workflow.kie4developer.common.interfaces;
 
 import java.util.List;
 import java.util.Map;
+import org.kie.server.api.model.instance.TaskSummary;
 
 /**
  * Interface for execution handling of process instances and human tasks
@@ -33,7 +34,7 @@ public interface IExecutionHelper {
    * @param username the username
    * @return list of tasks that can be processed
    */
-  List getTasks(String username);
+  List<TaskSummary> getTasks(String username);
 
   /**
    * Delegate task to a new user.

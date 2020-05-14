@@ -5,13 +5,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import org.kie.api.runtime.process.ProcessWorkItemHandlerException;
+import org.kie.api.runtime.process.ProcessWorkItemHandlerException.HandlingStrategy;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link IDeployableWorkItemHandler} implementation for executing Java classes via reflection You must pass in the
+ * A {@link IDeployableWorkItemHandler} implementation for executing Java classes via reflection. You must pass in the
  * variables <code>className</code> and <code>methodName</code> with optional <code>methodParameterType</code> and
  * <code>methodParameter</code> to invoke a custom class. The handler response with the map of results from the
  * invocation call.
@@ -22,6 +23,21 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JavaWorkItemHandler.class);
   private final String VERSION = "1.0.0";
+  private int retries = 0;
+  private final int MAX_RETRIES = 0;
+
+  /**
+   * Supported strategies: COMPLETE - it completes the workitemhandler task with the variables from the completed
+   * replacement subprocess instance (processid in ProcessWorkItemHandlerException instance) - these variables will be
+   * given to the workitemhandler task as output of the service interaction and thus mapped to main process instance
+   * variables. ABORT - it aborts the workitemhandler task and moves on the process without setting any variables. RETRY
+   * - it retries the workitemhandler task logic with variables from both the original workitemhandler task parameters
+   * and the variables from replacement subprocess instance - variables from replacement subprocess instance overrides
+   * any variables of the same name. RETHROW - it simply throws the error back to the caller - this strategy should not
+   * be used with wait state replacement subprocesses as it will simply rollback the transaction and thus the completion
+   * of the subprocess instance.
+   */
+  private static final HandlingStrategy STRATEGY = HandlingStrategy.RETHROW;
 
   @Override
   public String getVersion() {
@@ -34,6 +50,7 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
     String methodName = (String) getProcessVariableOrThrowException(workItem, "methodName");
     String parameterType = (String) workItem.getParameters().get("methodParameterType"); // optional
     Object parameter = workItem.getParameters().get("methodParameter"); // optional
+    String errorhandingprocessId = (String) workItem.getParameters().get("errorhandingprocessId"); // optional
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER
@@ -58,29 +75,22 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
       LOGGER.info("Executing Java class {} with method {} was successful. Result is: {}", className, methodName,
           castedResult);
       manager.completeWorkItem(workItem.getId(), castedResult);
-    } catch (ClassNotFoundException e) {
-      LOGGER.error("Class {} could not be found", className, e);
-      handleException(e);
     } catch (NoClassDefFoundError e) {
       LOGGER.error("Class {} could not be instantiated. "
           + "Please verify that no action blocks the class instantiation via default constructor", className, e);
-      handleException(e);
-    } catch (InstantiationException e) {
-      LOGGER.error("Class {} could not be instantiated. "
-          + "Please verify you defined a default constructor", className, e);
-      handleException(e);
-    } catch (IllegalAccessException e) {
-      LOGGER.error("Method {} in class {} could not be accessed", methodName, className, e);
-      handleException(e);
-    } catch (NoSuchMethodException e) {
-      LOGGER.error("Method {} could not be found in class {}", methodName, className, e);
-      handleException(e);
-    } catch (ClassCastException e) {
-      LOGGER.error("Method {} in class {} must return the Type Map<String, Object>", methodName, className, e);
-      handleException(e);
-    } catch (InvocationTargetException e) {
-      LOGGER.error("Method {} could not be found in class {}", methodName, className, e);
-      handleException(e);
+      handleException(errorhandingprocessId, workItem, manager, e);
+    } catch (InvocationTargetException | RuntimeException e) {
+      LOGGER.error(
+          "Runtime Error while execute Java class {} with method {} with parameter type {} and parameter value {}.",
+          className, methodName, parameterType, parameter, e);
+      handleException(errorhandingprocessId, workItem, manager, e);
+    } catch (ReflectiveOperationException e) {
+      LOGGER.error("Class {} or method {} could not be found or instantiated. "
+          + "Please verify the existence of a default constructor and method.", className, methodName, e);
+      handleException(errorhandingprocessId, workItem, manager, e);
+    } catch (Exception e) {
+      LOGGER.error("Method {} in class {} throws an unexpected Exception.", methodName, className, e);
+      handleException(errorhandingprocessId, workItem, manager, e);
     }
   }
 
@@ -93,11 +103,25 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
   /**
    * Handle execution errors
    *
-   * @param cause the exception cause
+   * @param errorhandingprocessId the process id of a separate error handling subprocesses
+   * @param workItem              the workItem reference
+   * @param manager               the manager reference
+   * @param cause                 the exception cause
    * @see ProcessWorkItemHandlerException
    */
-  private void handleException(Throwable cause) {
-    throw new RuntimeException(cause);
+  public void handleException(String errorhandingprocessId, WorkItem workItem, WorkItemManager manager,
+      Throwable cause) {
+    if (retries < MAX_RETRIES) {
+      retries++;
+      LOGGER.info("Retry execution #{}/{}.", retries, MAX_RETRIES);
+      executeWorkItem(workItem, manager);
+    } else if (errorhandingprocessId != null) {
+      LOGGER.info("Starting error handling subprocess {}.", errorhandingprocessId);
+      throw new ProcessWorkItemHandlerException(errorhandingprocessId, HandlingStrategy.COMPLETE,
+          cause);  // error gets handled by separate error handling subprocesses
+    } else {
+      throw new RuntimeException(cause);
+    }
   }
 
   /**
@@ -111,7 +135,7 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
   private Object getProcessVariableOrThrowException(WorkItem workItem, String key) throws IllegalArgumentException {
     Object parameterValue = workItem.getParameters().get(key);
     if (parameterValue == null) {
-      throw new IllegalArgumentException(String.format("Parameter %s not found in WorkItemHandler", key));
+      throw new IllegalArgumentException(String.format("Parameter %s not found in WorkItemHandler.", key));
     }
     return parameterValue;
   }
