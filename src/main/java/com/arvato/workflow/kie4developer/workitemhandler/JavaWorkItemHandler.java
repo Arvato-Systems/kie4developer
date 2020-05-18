@@ -26,19 +26,6 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
   private int retries = 0;
   private final int MAX_RETRIES = 0;
 
-  /**
-   * Supported strategies: COMPLETE - it completes the workitemhandler task with the variables from the completed
-   * replacement subprocess instance (processid in ProcessWorkItemHandlerException instance) - these variables will be
-   * given to the workitemhandler task as output of the service interaction and thus mapped to main process instance
-   * variables. ABORT - it aborts the workitemhandler task and moves on the process without setting any variables. RETRY
-   * - it retries the workitemhandler task logic with variables from both the original workitemhandler task parameters
-   * and the variables from replacement subprocess instance - variables from replacement subprocess instance overrides
-   * any variables of the same name. RETHROW - it simply throws the error back to the caller - this strategy should not
-   * be used with wait state replacement subprocesses as it will simply rollback the transaction and thus the completion
-   * of the subprocess instance.
-   */
-  private static final HandlingStrategy STRATEGY = HandlingStrategy.RETHROW;
-
   @Override
   public String getVersion() {
     return VERSION;
@@ -53,11 +40,12 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
     String errorhandingprocessId = (String) workItem.getParameters().get("errorhandingprocessId"); // optional
 
     if (LOGGER.isDebugEnabled()) {
+      // curl -X GET "http://{host}:{port}/kie-server/services/rest/server/containers/{containerid}/processes/instances/{processinstanceid}/variable/methodParameter" -H "accept: application/json"
       LOGGER
-          .debug("Try to execute Java Class {} with method {} with parameter type {} and parameter value {}", className,
+          .debug("Try to execute Java Class {} with method {} with parameter type {} and parameter value {}.", className,
               methodName, parameterType, parameter);
     } else {
-      LOGGER.info("Try to execute Java Class {} with method {}", className, methodName);
+      LOGGER.info("Try to execute Java Class {} with method {}.", className, methodName);
     }
 
     try {
@@ -72,12 +60,12 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
       Method method = c.getMethod(methodName, methodParameterTypes);
       Object result = method.invoke(instance, params);
       Map<String, Object> castedResult = (Map<String, Object>) result;
-      LOGGER.info("Executing Java class {} with method {} was successful. Result is: {}", className, methodName,
+      LOGGER.info("Executing Java class {} with method {} was successful. Result is: {}.", className, methodName,
           castedResult);
       manager.completeWorkItem(workItem.getId(), castedResult);
     } catch (NoClassDefFoundError e) {
       LOGGER.error("Class {} could not be instantiated. "
-          + "Please verify that no action blocks the class instantiation via default constructor", className, e);
+          + "Please verify that no action blocks the class instantiation via default constructor.", className, e);
       handleException(errorhandingprocessId, workItem, manager, e);
     } catch (InvocationTargetException | RuntimeException e) {
       LOGGER.error(
@@ -112,6 +100,10 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
   public void handleException(String errorhandingprocessId, WorkItem workItem, WorkItemManager manager,
       Throwable cause) {
     if (retries < MAX_RETRIES) {
+      try {
+        // increase time on every retry: 11min, 121min, 1331min ...
+        Thread.sleep(Double.doubleToLongBits(Math.pow(11, retries)) * 60 * 1000);
+      } catch (InterruptedException e) { }
       retries++;
       LOGGER.info("Retry execution #{}/{}.", retries, MAX_RETRIES);
       executeWorkItem(workItem, manager);

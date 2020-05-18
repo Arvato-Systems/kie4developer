@@ -113,6 +113,13 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
             migrationReport.addAll(kieClient.getProcessAdminClient()
                 .migrateProcessInstances(oldContainerId, processInstanceIds,
                     release.getContainerId(), instance.getProcessId()));
+            for (MigrationReportInstance report : migrationReport){
+              if (!report.isSuccessful()){
+                LOGGER.error("MigrationReport - failed to migrate process instance {}.\n{}", report.getProcessInstanceId(), report.getLogs());
+              }else{
+                LOGGER.info("MigrationReport - process instance {} successful migrated.", report.getProcessInstanceId());
+              }
+            }
           } catch (InstantiationException e) {
             LOGGER.error("Error while creating new instance of class", e);
           } catch (IllegalAccessException e) {
