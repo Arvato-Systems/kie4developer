@@ -229,7 +229,7 @@ public class KJarBuilder {
         + artifactId + File.separator + versionId + File.separator + artifactId + "-" + versionId + ".jar");
     File unzippedJar = unzip(jarFile);
 
-    List<Path> allClassFilesFromJar =  Files.walk(unzippedJar.toPath())
+    List<Path> allClassFilesFromJar = Files.walk(unzippedJar.toPath())
         .filter(path -> path.toFile().isFile())
         .filter(path -> path.toString().endsWith(".class"))
         .collect(Collectors.toList());

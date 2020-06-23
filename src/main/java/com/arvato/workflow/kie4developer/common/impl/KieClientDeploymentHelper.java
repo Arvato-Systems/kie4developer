@@ -39,6 +39,10 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private List<Class<? extends IDeployableBPMNProcess>> processesToDeploy;
   private List<Class<? extends IDeployableService>> serviceClassesToDeploy;
   private List<Class<? extends IDeployableWorkItemHandler>> workItemHandlersToDeploy;
+  @Value("${maven.repository}")
+  private String mavenRepoPath;
+  @Value("${kieserver.location}")
+  private String kieServerUrl;
   // kie workbench connection parameter
   @Value("${kieworkbench.protocol}")
   private String workbenchProtocol;
@@ -194,13 +198,13 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     // Maven coordinates
     String groupIdAsUrl = release.getGroupId().replace('.', '/');
     String artifactId = release.getArtifactId();
-    String version = release.getVersion();
+    String versionId = release.getVersion();
 
     String mavenBaseUrl = workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/"
         + workbenchMavenContext;
-    String url = mavenBaseUrl + "/" + groupIdAsUrl + "/" + artifactId + "/" + version + "/"
+    String url = mavenBaseUrl + "/" + groupIdAsUrl + "/" + artifactId + "/" + versionId + "/"
         + artifactId
-        + "-" + version + ".jar";
+        + "-" + versionId + ".jar";
 
     ResponseEntity<String> response = jarUploader.uploadFile(jarFile, url);
 
@@ -226,11 +230,34 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
    * @throws Exception on any Exception
    */
   private void createContainer() throws Exception {
+    String groupIdAsUrl = release.getGroupId().replace('.', '/');
+    String artifactId = release.getArtifactId();
+    String versionId = release.getVersion();
+
+    // if running the JBPM Server local we can cleanup existing old versions with same name to prevent loading issues
+    if (kieServerUrl.contains("localhost") || kieServerUrl.contains("127.0.0.1")){
+      try {
+        File oldJarFile = new File(mavenRepoPath + File.separator + groupIdAsUrl + File.separator + artifactId +
+            File.separator + versionId + File.separator + artifactId + "-" + versionId + ".jar");
+        if (oldJarFile.exists()){
+          oldJarFile.delete();
+        }
+        File oldPomFile = new File(mavenRepoPath + File.separator + groupIdAsUrl + File.separator + artifactId +
+            File.separator + versionId + File.separator + artifactId + "-" + versionId + ".pom");
+        if (oldPomFile.exists()){
+          oldPomFile.delete();
+        }
+      } catch (Exception e) {
+        LOGGER.warn("Can't delete old releases in local maven repository", e);
+      }
+    }
+
     String containerId = release.getContainerId();
     String containerAlias = release.getContainerAlias();
     ReleaseId releaseId = release.getReleaseIdForServerAPI();
     KieContainerResource resource = new KieContainerResource(containerId, releaseId);
     resource.setContainerAlias(containerAlias);
+
     // send deployment command to server
     ServiceResponse<KieContainerResource> createResponse = kieClient.getKieServicesClient()
         .createContainer(containerId, resource);
