@@ -247,6 +247,11 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
         if (oldPomFile.exists()){
           oldPomFile.delete();
         }
+        File resolverStatusFile = new File(mavenRepoPath + File.separator + groupIdAsUrl + File.separator + artifactId +
+            File.separator + versionId + File.separator + "resolver-status.properties");
+        if (resolverStatusFile.exists()){
+          resolverStatusFile.delete();
+        }
       } catch (Exception e) {
         LOGGER.warn("Can't delete old releases in local maven repository", e);
       }
