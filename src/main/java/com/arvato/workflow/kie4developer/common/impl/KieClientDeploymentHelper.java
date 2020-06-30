@@ -305,6 +305,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
       }
     } else {
       LOGGER.info("Container {} does not exist", containerId);
+      result = true;
     }
 
     LOGGER.info("Undeployment complete");
