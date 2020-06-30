@@ -80,4 +80,12 @@ public interface IExecutionHelper {
    */
   void completeTask(Long taskId, String username, Map<String, Object> params);
 
+  /**
+   * Send a signal to process instance.
+   *
+   * @param processInstanceId the process instance that should be notified
+   * @param signalName the signal name
+   * @param event the signal event
+   */
+  void sendSignal(Long processInstanceId, String signalName, Object event);
 }

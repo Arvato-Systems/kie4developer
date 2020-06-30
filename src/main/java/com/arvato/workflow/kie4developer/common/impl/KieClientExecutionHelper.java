@@ -66,4 +66,8 @@ public class KieClientExecutionHelper implements IExecutionHelper {
     kieClient.getTaskClient().completeAutoProgress(release.getContainerId(), taskId, username, params);
   }
 
+  @Override
+  public void sendSignal(Long processInstanceId, String signalName, Object event) {
+    kieClient.getProcessClient().signalProcessInstance(release.getContainerId(), processInstanceId, signalName, event);
+  }
 }
