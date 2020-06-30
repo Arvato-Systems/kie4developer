@@ -271,10 +271,13 @@ public class KJarBuilder {
    * @throws IOException on any I/O Exception
    */
   private Path extractFileWhenIncludedInJar(Path classfilePath) throws IOException {
-    if (classfilePath.toAbsolutePath().toString().contains(".jar")) {  // extract from jar if class is packed
+    while (classfilePath.toAbsolutePath().toString().contains(".jar")) {  // extract from jar if class is packed
       File jarFile = new File(classfilePath.toAbsolutePath().toString().split(".jar")[0] + ".jar");
       File unzippedJarFile = unzip(jarFile);
-      classfilePath = Paths.get(unzippedJarFile.getAbsolutePath() + File.separator + classfilePath.toAbsolutePath().toString().split(".jar")[1]);
+      String seperator = classfilePath.toAbsolutePath().toString().contains(".jar!") ? ".jar!" : ".jar";
+      String afterJar = classfilePath.toAbsolutePath().toString().substring(classfilePath.toAbsolutePath().toString().indexOf(seperator) + seperator.length());
+      afterJar = afterJar.replaceAll("classes!", "classes");
+      classfilePath = Paths.get(unzippedJarFile.getAbsolutePath() + File.separator + afterJar);
     }
     return classfilePath;
   }
@@ -287,6 +290,7 @@ public class KJarBuilder {
    */
   private void addClassFileToDeployment(Class clazz, Map<String, File> classFilesToDeploy) throws IOException {
     String compiledClassesDir = clazz.getProtectionDomain().getCodeSource().getLocation().getFile();
+    compiledClassesDir = compiledClassesDir.startsWith("file:") ? compiledClassesDir.substring(5) : compiledClassesDir;
     compiledClassesDir = compiledClassesDir.startsWith("/") ? compiledClassesDir.substring(1) : compiledClassesDir;
     Path directoryStreamPath = Paths.get(compiledClassesDir + clazz.getPackage().getName().replace(".", File.separator));
     directoryStreamPath = extractFileWhenIncludedInJar(directoryStreamPath);
