@@ -131,7 +131,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
           }
         }
         // undeploy old container
-        undeploy(false);
+        undeploy(oldContainerId, false);
       }
       LOGGER.info("Migration complete");
     }
@@ -273,11 +273,9 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     LOGGER.info("Container {} for release {} successful created", containerId, releaseId);
   }
 
-  @Override
-  public boolean undeploy(boolean cancelAllRunningInstances) {
+  private boolean undeploy(String containerId, boolean cancelAllRunningInstances) {
     LOGGER.info("Undeployment on KIE-Server...");
     // send deployment command to server
-    String containerId = release.getContainerId();
     KieContainerResource container = kieClient.getKieServicesClient().getContainerInfo(containerId).getResult();
     boolean result = false;
     if (container != null) {
@@ -311,6 +309,11 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 
     LOGGER.info("Undeployment complete");
     return result;
+  }
+
+  @Override
+  public boolean undeploy(boolean cancelAllRunningInstances) {
+    return undeploy(release.getContainerId(), cancelAllRunningInstances);
   }
 
 }
