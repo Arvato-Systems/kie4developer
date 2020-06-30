@@ -87,11 +87,12 @@ public class KJarBuilder {
       addClassFileToDeployment(serviceClass, classFilesToDeploy);
     }
     for (Class<? extends IDeployableDependency> dependencyClass : deployableDependencies) {
-      addClassFilesToDeployment(dependencyClass,classFilesToDeploy);
+      addClassFilesToDeployment(dependencyClass, classFilesToDeploy);
     }
 
     // generate xml-files
-    String deploymentDescriptor = buildDeploymentDescriptor(deployableWorkitemhandlers, release.isDeploymentTargetBICCW());
+    String deploymentDescriptor = buildDeploymentDescriptor(deployableWorkitemhandlers,
+        release.isDeploymentTargetBICCW());
     String kmoduleInfo = buildKmoduleInfo();
     String kmoduleXml = buildKmoduleXml();
     String beansXml = buildBeansXml(deployableWorkitemhandlers);
@@ -101,13 +102,17 @@ public class KJarBuilder {
 
     // convert to Resources
     List<Resource> resources = new ArrayList<>();
-    resources.add(ResourceFactory.newByteArrayResource(deploymentDescriptor.getBytes()).setSourcePath("META-INF/kie-deployment-descriptor.xml"));
+    resources.add(ResourceFactory.newByteArrayResource(deploymentDescriptor.getBytes())
+        .setSourcePath("META-INF/kie-deployment-descriptor.xml"));
     resources.add(ResourceFactory.newByteArrayResource(kmoduleInfo.getBytes()).setSourcePath("META-INF/kmodule.info"));
     resources.add(ResourceFactory.newByteArrayResource(kmoduleXml.getBytes()).setSourcePath("META-INF/kmodule.xml"));
-    resources.add(ResourceFactory.newByteArrayResource(persistenceXml.getBytes()).setSourcePath("META-INF/persistence.xml"));
-    resources.add( ResourceFactory.newByteArrayResource(beansXml.getBytes()).setSourcePath("META-INF/beans.xml"));
-    resources.add( ResourceFactory.newByteArrayResource(pomXml.getBytes()).setSourcePath("META-INF/maven/" + release.getGroupId() + File.separator + release.getArtifactId() + "/pom.xml"));
-    resources.add( ResourceFactory.newByteArrayResource(pomProperties.getBytes()).setSourcePath("META-INF/maven/" + release.getGroupId() + File.separator + release.getArtifactId() + "/pom.properties"));
+    resources
+        .add(ResourceFactory.newByteArrayResource(persistenceXml.getBytes()).setSourcePath("META-INF/persistence.xml"));
+    resources.add(ResourceFactory.newByteArrayResource(beansXml.getBytes()).setSourcePath("META-INF/beans.xml"));
+    resources.add(ResourceFactory.newByteArrayResource(pomXml.getBytes()).setSourcePath(
+        "META-INF/maven/" + release.getGroupId() + File.separator + release.getArtifactId() + "/pom.xml"));
+    resources.add(ResourceFactory.newByteArrayResource(pomProperties.getBytes()).setSourcePath(
+        "META-INF/maven/" + release.getGroupId() + File.separator + release.getArtifactId() + "/pom.properties"));
     for (Class<? extends IDeployableBPMNProcess> deployableProcess : deployableProcesses) {
       resources.add(deployableProcess.newInstance().getBPMNModel()); // .bpmn
     }
@@ -115,14 +120,16 @@ public class KJarBuilder {
       try {
         String filepathForKJar = deployableWorkitemhandlerFileSet.getKey();
         Path classFileForKJar = extractFileWhenIncludedInJar(deployableWorkitemhandlerFileSet.getValue().toPath());
-        resources.add(ResourceFactory.newByteArrayResource(Files.readAllBytes(classFileForKJar)).setSourcePath(filepathForKJar));
+        resources.add(
+            ResourceFactory.newByteArrayResource(Files.readAllBytes(classFileForKJar)).setSourcePath(filepathForKJar));
       } catch (IOException e) {
-        LOGGER.error(String.format("Error on reading workitemhandler class file %s", deployableWorkitemhandlerFileSet.getValue().getAbsolutePath()), e);
+        LOGGER.error(String.format("Error on reading workitemhandler class file %s",
+            deployableWorkitemhandlerFileSet.getValue().getAbsolutePath()), e);
       }
     }
 
     // write to kmodule
-    for (Resource resource : resources){
+    for (Resource resource : resources) {
       kfs.write(resource);
     }
 
@@ -214,10 +221,11 @@ public class KJarBuilder {
   /**
    * Add all class-files of the @link{IDeployableDependency} to the list of class files
    *
-   * @param dependencyClass the dependency definition
+   * @param dependencyClass    the dependency definition
    * @param classFilesToDeploy the list of class files to extend
    */
-  private void addClassFilesToDeployment(Class<? extends IDeployableDependency> dependencyClass, Map<String, File> classFilesToDeploy)
+  private void addClassFilesToDeployment(Class<? extends IDeployableDependency> dependencyClass,
+      Map<String, File> classFilesToDeploy)
       throws IllegalAccessException, InstantiationException, IOException {
     IDeployableDependency instance = dependencyClass.newInstance();
     String groupId = instance.getMavenGroupId();
@@ -235,18 +243,19 @@ public class KJarBuilder {
         .collect(Collectors.toList());
 
     for (Path classFile : allClassFilesFromJar) {
-      addClassFileToDeployment(classFile,classFilesToDeploy);
+      addClassFileToDeployment(classFile, classFilesToDeploy);
     }
   }
 
   /**
    * Add the class-file to the list of class files
    *
-   * @param classfilePath the path to the class-file
+   * @param classfilePath      the path to the class-file
    * @param classFilesToDeploy the list of class files to extend
    */
   private void addClassFileToDeployment(Path classfilePath, Map<String, File> classFilesToDeploy) {
-    Path filepath = Paths.get(System.getProperty("java.io.tmpdir")).relativize(classfilePath); // remove the tmp dir path
+    Path filepath = Paths.get(System.getProperty("java.io.tmpdir"))
+        .relativize(classfilePath); // remove the tmp dir path
     filepath = filepath.subpath(1, filepath.getNameCount()); // remove the generated tmp-folder name
     classFilesToDeploy.put(filepath.toString(), classfilePath.toFile());
   }
@@ -254,7 +263,7 @@ public class KJarBuilder {
   /**
    * Get the relativized filepath for a class-file
    *
-   * @param clazz the class
+   * @param clazz         the class
    * @param classfilePath the fullpath which should be relativized
    * @return the relativized filepath of the class-file
    */
@@ -272,12 +281,13 @@ public class KJarBuilder {
    */
   private Path extractFileWhenIncludedInJar(Path classfilePath) throws IOException {
     while (classfilePath.toAbsolutePath().toString().contains(".jar")) {  // extract from jar if class is packed
-      File jarFile = new File(classfilePath.toAbsolutePath().toString().split(".jar")[0] + ".jar");
+      File jarFile = new File(classfilePath.toString().split(".jar")[0] + ".jar");
       File unzippedJarFile = unzip(jarFile);
-      String seperator = classfilePath.toAbsolutePath().toString().contains(".jar!") ? ".jar!" : ".jar";
-      String afterJar = classfilePath.toAbsolutePath().toString().substring(classfilePath.toAbsolutePath().toString().indexOf(seperator) + seperator.length());
+      String seperator = classfilePath.toString().contains(".jar!") ? ".jar!" : ".jar";
+      String afterJar = classfilePath.toString()
+          .substring(classfilePath.toString().indexOf(seperator) + seperator.length());
       afterJar = afterJar.replaceAll("classes!", "classes");
-      classfilePath = Paths.get(unzippedJarFile.getAbsolutePath() + File.separator + afterJar);
+      classfilePath = Paths.get(unzippedJarFile.toString() + File.separator + afterJar);
     }
     return classfilePath;
   }
@@ -285,14 +295,15 @@ public class KJarBuilder {
   /**
    * Add the class-file to the list of class files
    *
-   * @param clazz the class
+   * @param clazz              the class
    * @param classFilesToDeploy the list of class files to extend
    */
   private void addClassFileToDeployment(Class clazz, Map<String, File> classFilesToDeploy) throws IOException {
     String compiledClassesDir = clazz.getProtectionDomain().getCodeSource().getLocation().getFile();
     compiledClassesDir = compiledClassesDir.startsWith("file:") ? compiledClassesDir.substring(5) : compiledClassesDir;
-    compiledClassesDir = compiledClassesDir.startsWith("/") ? compiledClassesDir.substring(1) : compiledClassesDir;
-    Path directoryStreamPath = Paths.get(compiledClassesDir + clazz.getPackage().getName().replace(".", File.separator));
+    compiledClassesDir = (compiledClassesDir.startsWith("/") && compiledClassesDir.contains(":")) ? compiledClassesDir.substring(1) : compiledClassesDir;
+    Path directoryStreamPath = Paths
+        .get(compiledClassesDir + clazz.getPackage().getName().replace(".", File.separator));
     directoryStreamPath = extractFileWhenIncludedInJar(directoryStreamPath);
 
     String pattern = "glob:**/" + clazz.getSimpleName() + "*.class";
@@ -316,7 +327,8 @@ public class KJarBuilder {
         "<beans xmlns=\"http://java.sun.com/xml/ns/javaee\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://java.sun.com/xml/ns/javaee http://docs.jboss.org/cdi/beans_1_0.xsd\">\n"
             + "  <alternatives>\n";
     for (Class<? extends IDeployableWorkItemHandler> workitemhandler : deployableWorkitemhandlers) {
-      beansXml += "    <class>" + workitemhandler.getPackage().getName() + "." + workitemhandler.getName() + "</class>\n";
+      beansXml +=
+          "    <class>" + workitemhandler.getPackage().getName() + "." + workitemhandler.getName() + "</class>\n";
     }
     beansXml += "  </alternatives>\n"
         + "</beans>";
