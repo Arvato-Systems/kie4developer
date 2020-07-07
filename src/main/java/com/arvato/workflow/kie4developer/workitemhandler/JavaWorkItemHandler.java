@@ -10,6 +10,7 @@ import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
 
 /**
  * A {@link IDeployableWorkItemHandler} implementation for executing Java classes via reflection. You must pass in the
@@ -52,7 +53,12 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
 
     try {
       Class<?> c = Class.forName(className);
-      Object instance = c.getConstructor().newInstance();
+      Object instance;
+      try {
+        instance = SpringContext.getBean(c); // try to load using spring
+      } catch (BeansException e) {
+        instance = c.getConstructor().newInstance(); // try to load using java reflection
+      }
       Class<?>[] methodParameterTypes = null;
       Object[] params = null;
       if (parameter != null && parameterType != null) {
@@ -73,7 +79,7 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
       LOGGER.error(
           "Runtime Error while execute Java class {} with method {} with parameter type {} and parameter value {}.",
           className, methodName, parameterType, parameter, e);
-      handleException( workItem, manager, e, errorHandingProcessId);
+      handleException(workItem, manager, e, errorHandingProcessId);
     } catch (ReflectiveOperationException e) {
       LOGGER.error("Class {} or method {} could not be found or instantiated. "
           + "Please verify the existence of a default constructor and method.", className, methodName, e);
@@ -92,6 +98,7 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
 
   /**
    * Handle execution errors
+   *
    * @param workItem              the workItem reference
    * @param manager               the manager reference
    * @param cause                 the exception cause
@@ -111,7 +118,8 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
       executeWorkItem(workItem, manager);
     } else if (errorHandingProcessId != null) {
       LOGGER.info("Starting error handling subprocess {}.", errorHandingProcessId);
-      throw new ProcessWorkItemHandlerException(errorHandingProcessId, HandlingStrategy.COMPLETE, cause);  // error gets handled by separate error handling subprocesses
+      throw new ProcessWorkItemHandlerException(errorHandingProcessId, HandlingStrategy.COMPLETE,
+          cause);  // error gets handled by separate error handling subprocesses
     } else {
       throw new RuntimeException(cause);
     }
