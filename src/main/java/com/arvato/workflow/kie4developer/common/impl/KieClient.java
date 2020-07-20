@@ -1,5 +1,8 @@
 package com.arvato.workflow.kie4developer.common.impl;
 
+import java.util.HashSet;
+import java.util.Set;
+import org.kie.api.remote.Remotable;
 import org.kie.server.api.marshalling.MarshallingFormat;
 import org.kie.server.client.DocumentServicesClient;
 import org.kie.server.client.JobServicesClient;
@@ -12,6 +15,7 @@ import org.kie.server.client.UIServicesClient;
 import org.kie.server.client.UserTaskServicesClient;
 import org.kie.server.client.admin.ProcessAdminServicesClient;
 import org.kie.server.client.admin.UserTaskAdminServicesClient;
+import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,6 +48,12 @@ public class KieClient {
       configuration = KieServicesFactory.newRestConfiguration(kieServerUrl, kieServerUser, kieServerPwd);
       configuration.setTimeout(timeout); // default is 5s
       configuration.setMarshallingFormat(MarshallingFormat.JSON);
+      Set<Class<?>> customJAXBClasses = new HashSet<>();
+      Reflections ref = new Reflections();
+      for (Class<?> cl : ref.getTypesAnnotatedWith(Remotable.class)) {
+        customJAXBClasses.add(cl);
+      }
+      configuration.setExtraClasses(customJAXBClasses);
       kieServicesClient = KieServicesFactory.newKieServicesClient(configuration);
       LOGGER.info("Connection established");
     }
