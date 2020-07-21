@@ -53,7 +53,9 @@ public class KieClient {
       Set<Class<?>> customJAXBClasses = new HashSet<>();
       Reflections ref = new Reflections(serializationGroupId);
       for (Class<?> cl : ref.getSubTypesOf(Serializable.class)) {
-        customJAXBClasses.add(cl);
+        if (cl.getName().startsWith(serializationGroupId)){
+          customJAXBClasses.add(cl);
+        }
       }
       configuration.setExtraClasses(customJAXBClasses);
       kieServicesClient = KieServicesFactory.newKieServicesClient(configuration);
