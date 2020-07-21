@@ -83,6 +83,7 @@ Configure your project settings
 
 ```
 spring.application.groupid=com.example
+spring.application.groupid.serialization=${spring.application.groupid}
 spring.application.name=myproject
 spring.application.version=1.0.0-SNAPSHOT
 spring.application.project.name=My Project
@@ -92,7 +93,7 @@ spring.application.project.description=My first Workflow Project
 Add BPMN Process Model classes by implementing the ```IDeployableBPMNProcess``` Interface. Store them in the package ```com.example.workflow.processes```.
 Add required dependencies by add them into  ```pom.xml``` and implementing the ```IDeployableDependency``` Interface. Store them in the package ```com.example.workflow.dependencies```.
 Use Service classes that runs your business logic by implementing the ```IDeployableService``` Interface. Store them in the package ```com.example.workflow.services```.
-If you use custom classes within your Services annotate them with ```@org.kie.api.remote.Remotable``` for marshalling support.
+If you use custom classes within your process models make sure these implements ```Serializable``` for marshalling support.
 Add own WorkItemHandler by implementing the ```IDeployableWorkItemHandler``` Interface. Store them in the package ```com.example.workflow.workitemhandler```.
 
 Check out many examples within the ```test``` directory.

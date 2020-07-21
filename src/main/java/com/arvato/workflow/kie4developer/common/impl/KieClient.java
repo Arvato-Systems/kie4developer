@@ -1,8 +1,8 @@
 package com.arvato.workflow.kie4developer.common.impl;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import org.kie.api.remote.Remotable;
 import org.kie.server.api.marshalling.MarshallingFormat;
 import org.kie.server.client.DocumentServicesClient;
 import org.kie.server.client.JobServicesClient;
@@ -41,6 +41,8 @@ public class KieClient {
   private String kieServerPwd;
   @Value("${org.kie.server.timeout}")
   private Long timeout;
+  @Value("${spring.application.groupid.serialization}")
+  private String serializationGroupId;
 
   public KieServicesClient getKieServicesClient() {
     if (kieServicesClient == null) {
@@ -49,8 +51,8 @@ public class KieClient {
       configuration.setTimeout(timeout); // default is 5s
       configuration.setMarshallingFormat(MarshallingFormat.JSON);
       Set<Class<?>> customJAXBClasses = new HashSet<>();
-      Reflections ref = new Reflections();
-      for (Class<?> cl : ref.getTypesAnnotatedWith(Remotable.class)) {
+      Reflections ref = new Reflections(serializationGroupId);
+      for (Class<?> cl : ref.getSubTypesOf(Serializable.class)) {
         customJAXBClasses.add(cl);
       }
       configuration.setExtraClasses(customJAXBClasses);
