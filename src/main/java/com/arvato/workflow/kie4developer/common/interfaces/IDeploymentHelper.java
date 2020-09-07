@@ -42,7 +42,7 @@ public interface IDeploymentHelper {
 	 *
 	 * @param serviceClassesToDeploy classes to deploy
 	 */
-	void setServiceClassesToDeploy(List<Class<? extends IDeployableService>> serviceClassesToDeploy);
+	void setServiceClassesToDeploy(List<Class> serviceClassesToDeploy);
 
 	/**
 	 * Define the Workitemhandler(s) you want to deploy on the Server

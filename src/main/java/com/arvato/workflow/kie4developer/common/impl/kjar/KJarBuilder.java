@@ -2,7 +2,6 @@ package com.arvato.workflow.kie4developer.common.impl.kjar;
 
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableBPMNProcess;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableDependency;
-import com.arvato.workflow.kie4developer.common.interfaces.IDeployableService;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableWorkItemHandler;
 import com.arvato.workflow.kie4developer.common.interfaces.IRelease;
 import java.io.File;
@@ -71,7 +70,7 @@ public class KJarBuilder {
   public File buildKjar(List<Class<? extends IDeployableDependency>> deployableDependencies,
       List<Class<? extends IDeployableBPMNProcess>> deployableProcesses,
       List<Class<? extends IDeployableWorkItemHandler>> deployableWorkitemhandlers,
-      List<Class<? extends IDeployableService>> deployableServiceclasses) throws Exception {
+      List<Class> deployableServiceclasses) throws Exception {
     KieServices ks = KieServices.Factory.get();
     KieFileSystem kfs = ks.newKieFileSystem();
 
@@ -79,11 +78,10 @@ public class KJarBuilder {
 
     // add classes-files
     addClassFileToDeployment(IDeployableWorkItemHandler.class, classFilesToDeploy);
-    addClassFileToDeployment(IDeployableService.class, classFilesToDeploy);
     for (Class<? extends IDeployableWorkItemHandler> workitemhandlerClass : deployableWorkitemhandlers) {
       addClassFileToDeployment(workitemhandlerClass, classFilesToDeploy);
     }
-    for (Class<? extends IDeployableService> serviceClass : deployableServiceclasses) {
+    for (Class serviceClass : deployableServiceclasses) {
       addClassFileToDeployment(serviceClass, classFilesToDeploy);
     }
     for (Class<? extends IDeployableDependency> dependencyClass : deployableDependencies) {

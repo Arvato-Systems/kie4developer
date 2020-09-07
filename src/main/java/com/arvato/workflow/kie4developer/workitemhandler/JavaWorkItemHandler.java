@@ -10,7 +10,7 @@ import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
+//import org.springframework.beans.BeansException;
 
 /**
  * A {@link IDeployableWorkItemHandler} implementation for executing Java classes via reflection. You must pass in the
@@ -54,11 +54,12 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
     try {
       Class<?> c = Class.forName(className);
       Object instance;
-      try {
-        instance = SpringContext.getBean(c); // try to load using spring
-      } catch (BeansException e) {
+      //TODO: support following for testruns only - on runtime it causes issues
+//      try {
+//        instance = SpringContext.getBean(c); // try to load using spring
+//      } catch (BeansException e){
         instance = c.getConstructor().newInstance(); // try to load using java reflection
-      }
+//      }
       Class<?>[] methodParameterTypes = null;
       Object[] params = null;
       if (parameter != null && parameterType != null) {

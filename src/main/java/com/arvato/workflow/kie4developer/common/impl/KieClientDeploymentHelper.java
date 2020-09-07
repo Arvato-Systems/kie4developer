@@ -4,7 +4,6 @@ import com.arvato.workflow.kie4developer.common.impl.kjar.JarUploader;
 import com.arvato.workflow.kie4developer.common.impl.kjar.KJarBuilder;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableBPMNProcess;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableDependency;
-import com.arvato.workflow.kie4developer.common.interfaces.IDeployableService;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableWorkItemHandler;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeploymentHelper;
 import com.arvato.workflow.kie4developer.common.interfaces.IRelease;
@@ -37,7 +36,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private JarUploader jarUploader;
   private List<Class<? extends IDeployableDependency>> dependenciesToDeploy;
   private List<Class<? extends IDeployableBPMNProcess>> processesToDeploy;
-  private List<Class<? extends IDeployableService>> serviceClassesToDeploy;
+  private List<Class> serviceClassesToDeploy;
   private List<Class<? extends IDeployableWorkItemHandler>> workItemHandlersToDeploy;
   @Value("${maven.repository}")
   private String mavenRepoPath;
@@ -87,7 +86,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   }
 
   @Override
-  public void setServiceClassesToDeploy(List<Class<? extends IDeployableService>> serviceClassesToDeploy) {
+  public void setServiceClassesToDeploy(List<Class> serviceClassesToDeploy) {
     this.serviceClassesToDeploy = serviceClassesToDeploy;
   }
 
