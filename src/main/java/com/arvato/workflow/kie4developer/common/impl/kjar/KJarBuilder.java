@@ -413,7 +413,7 @@ public class KJarBuilder {
           + "            <resolver>reflection</resolver>\n"
           + "            <identifier>com.arvato.bicce.listener.ImprovedBicceTaskEventListener</identifier>\n"
           + "            <parameters/>\n"
-          + "        </task-event-listener>"
+          + "        </task-event-listener>\n"
           + "    </task-event-listeners>\n";
     } else {
       deplomentDescriptorXml += "    <event-listeners/>\n"
