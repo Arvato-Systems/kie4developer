@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -143,7 +144,10 @@ public class KJarBuilder {
     // build the kjar file that represents the kmodule
     File jarFile;
     try {
-      jarFile = File.createTempFile(release.getArtifactId() + "-" + release.getVersion() + "-", ".jar");
+      File tmpdir = new File(System.getProperty("java.io.tmpdir"));
+      long timestamp = Instant.now().getEpochSecond();
+      String filename = release.getArtifactId() + "-" + release.getVersion() + "-" + timestamp + ".jar";
+      jarFile = new File(tmpdir, filename);
       OutputStream os = new FileOutputStream(jarFile);
       InternalKieModule kieModule = (InternalKieModule) builder.getKieModule();
       os.write(kieModule.getBytes());
@@ -299,7 +303,9 @@ public class KJarBuilder {
   private void addClassFileToDeployment(Class clazz, Map<String, File> classFilesToDeploy) throws IOException {
     String compiledClassesDir = clazz.getProtectionDomain().getCodeSource().getLocation().getFile();
     compiledClassesDir = compiledClassesDir.startsWith("file:") ? compiledClassesDir.substring(5) : compiledClassesDir;
-    compiledClassesDir = (compiledClassesDir.startsWith("/") && compiledClassesDir.contains(":")) ? compiledClassesDir.substring(1) : compiledClassesDir;
+    compiledClassesDir =
+        (compiledClassesDir.startsWith("/") && compiledClassesDir.contains(":")) ? compiledClassesDir.substring(1)
+            : compiledClassesDir;
     compiledClassesDir = compiledClassesDir.replace("%20", " ");
     Path directoryStreamPath = Paths
         .get(compiledClassesDir + clazz.getPackage().getName().replace(".", File.separator));
