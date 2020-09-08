@@ -14,6 +14,7 @@ import java.util.List;
 import org.appformer.maven.integration.embedder.MavenSettings;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.util.repository.AuthenticationBuilder;
+import org.kie.server.api.exception.KieServicesHttpException;
 import org.kie.server.api.model.KieContainerResource;
 import org.kie.server.api.model.KieServiceResponse.ResponseType;
 import org.kie.server.api.model.ReleaseId;
@@ -279,17 +280,29 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     boolean result = false;
     if (container != null) {
       if (cancelAllRunningInstances) {
-        // check if we have running process instances
-        List<ProcessInstance> processInstances = kieClient.getProcessClient()
-            .findProcessInstances(containerId, 0, Integer.MAX_VALUE);
-        List<Long> processInstanceIds = new ArrayList<>();
-        for (ProcessInstance processInstance : processInstances) {
-          processInstanceIds.add(processInstance.getId());
-        }
-        if (processInstanceIds.size() > 0) {
-          kieClient.getProcessClient().abortProcessInstances(containerId, processInstanceIds);
-          LOGGER.info("{} Process Instances aborted", processInstanceIds.size());
-        }
+        boolean retry = false;
+        do{
+          // check if we have running process instances
+          List<ProcessInstance> processInstances = kieClient.getProcessClient()
+              .findProcessInstances(containerId, 0, Integer.MAX_VALUE);
+          List<Long> processInstanceIds = new ArrayList<>();
+          for (ProcessInstance processInstance : processInstances) {
+            processInstanceIds.add(processInstance.getId());
+          }
+          if (processInstanceIds.size() > 0) {
+            try{
+              kieClient.getProcessClient().abortProcessInstances(containerId, processInstanceIds);
+              LOGGER.info("{} Process Instances aborted", processInstanceIds.size());
+            }catch (KieServicesHttpException e){
+              if (e.getResponseBody().contains("Could not find process instance with id")){
+                // this case happens when a subprocess instance was already canceled by the related parent instance
+                retry = true;
+              }else{
+                throw e;
+              }
+            }
+          }
+        } while (retry);
       }
 
       ServiceResponse<Void> responseDispose = kieClient.getKieServicesClient().disposeContainer(containerId);
