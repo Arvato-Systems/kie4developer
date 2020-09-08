@@ -300,6 +300,7 @@ public class KJarBuilder {
     String compiledClassesDir = clazz.getProtectionDomain().getCodeSource().getLocation().getFile();
     compiledClassesDir = compiledClassesDir.startsWith("file:") ? compiledClassesDir.substring(5) : compiledClassesDir;
     compiledClassesDir = (compiledClassesDir.startsWith("/") && compiledClassesDir.contains(":")) ? compiledClassesDir.substring(1) : compiledClassesDir;
+    compiledClassesDir = compiledClassesDir.replace("%20", " ");
     Path directoryStreamPath = Paths
         .get(compiledClassesDir + clazz.getPackage().getName().replace(".", File.separator));
     directoryStreamPath = extractFileWhenIncludedInJar(directoryStreamPath);

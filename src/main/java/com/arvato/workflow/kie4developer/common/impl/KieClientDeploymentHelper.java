@@ -280,8 +280,9 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     boolean result = false;
     if (container != null) {
       if (cancelAllRunningInstances) {
-        boolean retry = false;
+        boolean retry;
         do{
+          retry = false;
           // check if we have running process instances
           List<ProcessInstance> processInstances = kieClient.getProcessClient()
               .findProcessInstances(containerId, 0, Integer.MAX_VALUE);
