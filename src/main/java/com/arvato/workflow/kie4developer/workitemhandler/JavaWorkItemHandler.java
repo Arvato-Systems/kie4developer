@@ -53,7 +53,6 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
     try {
       Class<?> c = Class.forName(className);
       Object instance = null;
-      System.out.println("kieserver.location="+System.getProperty("kieserver.location"));
       if (System.getProperties().containsKey("kieserver.location") && System.getProperty("kieserver.location").contains("localhost")) {
         try {
           instance = SpringContext.getBean(c); // try to load using spring dependency injection
