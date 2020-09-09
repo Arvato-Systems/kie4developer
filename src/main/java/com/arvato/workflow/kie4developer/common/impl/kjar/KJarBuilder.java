@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -302,13 +303,14 @@ public class KJarBuilder {
    */
   private void addClassFileToDeployment(Class clazz, Map<String, File> classFilesToDeploy) throws IOException {
     String compiledClassesDir = clazz.getProtectionDomain().getCodeSource().getLocation().getFile();
+    System.out.println("(1) compiledClassesDir="+compiledClassesDir);
     compiledClassesDir = compiledClassesDir.startsWith("file:") ? compiledClassesDir.substring(5) : compiledClassesDir;
-    compiledClassesDir =
-        (compiledClassesDir.startsWith("/") && compiledClassesDir.contains(":")) ? compiledClassesDir.substring(1)
-            : compiledClassesDir;
-    compiledClassesDir = compiledClassesDir.replace("%20", " ");
-    Path directoryStreamPath = Paths
-        .get(compiledClassesDir + clazz.getPackage().getName().replace(".", File.separator));
+    System.out.println("(2) compiledClassesDir="+compiledClassesDir);
+    compiledClassesDir = (compiledClassesDir.startsWith("/") && compiledClassesDir.contains(":")) ? compiledClassesDir.substring(1) : compiledClassesDir;
+    System.out.println("(3) compiledClassesDir="+compiledClassesDir);
+    compiledClassesDir = URLDecoder.decode(compiledClassesDir, "UTF-8");
+    System.out.println("(4) compiledClassesDir="+compiledClassesDir);
+    Path directoryStreamPath = Paths.get(compiledClassesDir + clazz.getPackage().getName().replace(".", File.separator));
     directoryStreamPath = extractFileWhenIncludedInJar(directoryStreamPath);
 
     String pattern = "glob:**/" + clazz.getSimpleName() + "*.class";
