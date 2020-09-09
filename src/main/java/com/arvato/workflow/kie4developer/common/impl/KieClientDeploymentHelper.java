@@ -295,8 +295,10 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
               kieClient.getProcessClient().abortProcessInstances(containerId, processInstanceIds);
               LOGGER.info("{} Process Instances aborted", processInstanceIds.size());
             }catch (KieServicesHttpException e){
+              //Error code: 404, message: "Could not find process instance with id "107,446""
               if (e.getResponseBody().contains("Could not find process instance with id")){
                 // this case happens when a subprocess instance was already canceled by the related parent instance
+                LOGGER.warn("Failure while aborting {} Process Instances: {}", processInstanceIds.size(), e.getResponseBody());
                 retry = true;
               }else{
                 throw e;
