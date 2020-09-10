@@ -18,7 +18,10 @@ import org.kie.server.client.admin.UserTaskAdminServicesClient;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.embedded.LocalServerPort;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 /**
@@ -33,6 +36,8 @@ public class KieClient {
   private KieServicesConfiguration configuration;
   private KieServicesClient kieServicesClient;
   // kie server connection parameter
+  @Autowired
+  Environment environment;
   @Value("${kieserver.location}")
   private String kieServerUrl;
   @Value("${kieserver.user}")
@@ -47,6 +52,10 @@ public class KieClient {
   public KieServicesClient getKieServicesClient() {
     if (kieServicesClient == null) {
       LOGGER.info("Connecting to KIE-Server...");
+      if (kieServerUrl.contains(":0")){
+        String rndPort = environment.getProperty("local.server.port");
+        kieServerUrl = kieServerUrl.replace(":0", ":"+rndPort);
+      }
       configuration = KieServicesFactory.newRestConfiguration(kieServerUrl, kieServerUser, kieServerPwd);
       configuration.setTimeout(timeout); // default is 5s
       configuration.setMarshallingFormat(MarshallingFormat.JSON);
