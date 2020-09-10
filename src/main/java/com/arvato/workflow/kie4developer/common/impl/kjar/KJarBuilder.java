@@ -303,13 +303,13 @@ public class KJarBuilder {
    */
   private void addClassFileToDeployment(Class clazz, Map<String, File> classFilesToDeploy) throws IOException {
     String compiledClassesDir = clazz.getProtectionDomain().getCodeSource().getLocation().getFile();
-    LOGGER.info("(1) compiledClassesDir="+compiledClassesDir);
+    LOGGER.debug("(1) compiledClassesDir="+compiledClassesDir);
     compiledClassesDir = compiledClassesDir.startsWith("file:") ? compiledClassesDir.substring(5) : compiledClassesDir;
-    LOGGER.info("(2) compiledClassesDir="+compiledClassesDir);
+    LOGGER.debug("(2) compiledClassesDir="+compiledClassesDir);
     compiledClassesDir = (compiledClassesDir.startsWith("/") && compiledClassesDir.contains(":")) ? compiledClassesDir.substring(1) : compiledClassesDir;
-    LOGGER.info("(3) compiledClassesDir="+compiledClassesDir);
+    LOGGER.debug("(3) compiledClassesDir="+compiledClassesDir);
     compiledClassesDir = URLDecoder.decode(compiledClassesDir, "UTF-8");
-    LOGGER.info("(4) compiledClassesDir="+compiledClassesDir);
+    LOGGER.debug("(4) compiledClassesDir="+compiledClassesDir);
     Path directoryStreamPath = Paths.get(compiledClassesDir + clazz.getPackage().getName().replace(".", File.separator));
     directoryStreamPath = extractFileWhenIncludedInJar(directoryStreamPath);
 
