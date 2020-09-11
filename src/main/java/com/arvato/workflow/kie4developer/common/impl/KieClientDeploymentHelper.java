@@ -254,8 +254,9 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 
     if (workbenchHost.contains("localhost") ||workbenchHost.contains("127.0.0.1")){
       // if running the JBPM Server locally add the kie workbench as possible target to fetch artifacts... as alternative you could add this to your system local settings.xml
-      File m2RepoDir = new File(this.mavenRepoPath);
+      File m2RepoDir = Files.createTempDirectory(UUID.randomUUID().toString()).toFile();
       String localRepositoryUrl = m2RepoDir.toURI().toURL().toExternalForm();
+      MavenSettings.getMavenRepositoryConfiguration().getRemoteRepositoriesForRequest().clear();
       MavenSettings.getMavenRepositoryConfiguration().getRemoteRepositoriesForRequest().add(
           new RemoteRepository.Builder("local", "maven2", localRepositoryUrl).build()
       );
