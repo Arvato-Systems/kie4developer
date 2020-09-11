@@ -1,5 +1,7 @@
 package com.arvato.workflow.kie4developer.common.impl;
 
+import static org.apache.maven.artifact.repository.ArtifactRepositoryPolicy.*;
+
 import com.arvato.workflow.kie4developer.common.impl.kjar.JarUploader;
 import com.arvato.workflow.kie4developer.common.impl.kjar.KJarBuilder;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableBPMNProcess;
@@ -9,10 +11,26 @@ import com.arvato.workflow.kie4developer.common.interfaces.IDeploymentHelper;
 import com.arvato.workflow.kie4developer.common.interfaces.IRelease;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import org.apache.maven.Maven;
+import org.apache.maven.artifact.repository.ArtifactRepositoryPolicy;
+import org.apache.maven.artifact.repository.MavenArtifactRepository;
+import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
+import org.apache.maven.repository.UserLocalArtifactRepository;
+import org.appformer.maven.integration.MavenRepository;
 import org.appformer.maven.integration.embedder.MavenSettings;
+import org.apache.maven.artifact.repository.*;
+import org.appformer.maven.support.AFReleaseId;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.RemoteRepository.Builder;
 import org.eclipse.aether.util.repository.AuthenticationBuilder;
 import org.kie.server.api.exception.KieServicesHttpException;
 import org.kie.server.api.model.KieContainerResource;
@@ -156,9 +174,9 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
      */
 
     // first we have to build the kjar release file by our own
-    File jarFile;
+    Map<String,File> jarAndPomFile;
     try {
-      jarFile = kJarBuilder
+      jarAndPomFile = kJarBuilder
           .buildKjar(dependenciesToDeploy, processesToDeploy, workItemHandlersToDeploy, serviceClassesToDeploy);
     } catch (Exception e) {
       LOGGER.error("Error while creating the kjar file", e);
@@ -167,11 +185,11 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 
     // next we can upload this file into kie-server maven repo
     try {
-      uploadJar(jarFile);
+      uploadJar(jarAndPomFile.get("jar"), jarAndPomFile.get("pom"));
     } catch (Exception e) {
       LOGGER.error(String
           .format("Error while uploading jar file %s. This could be also caused by missing dependencies",
-              jarFile.getAbsolutePath()), e);
+              jarAndPomFile.get("jar").getAbsolutePath()), e);
       return false;
     }
 
@@ -188,13 +206,41 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   }
 
   /**
+   * Unzip a zip/jar to a tmp directory
+   *
+   * @param zipFile the jar or zip file to extract
+   * @return the temp directory which contains all extracted folders and files of the archive
+   */
+  private File unzip(File zipFile) throws IOException {
+    Path outputPath = Files.createTempDirectory(UUID.randomUUID().toString());
+    try (ZipFile zf = new ZipFile(zipFile)) {
+      Enumeration<? extends ZipEntry> zipEntries = zf.entries();
+      while (zipEntries.hasMoreElements()) {
+        ZipEntry entry = zipEntries.nextElement();
+        if (entry.isDirectory()) {
+          Path dirToCreate = outputPath.resolve(entry.getName());
+          Files.createDirectories(dirToCreate);
+        } else {
+          Path fileToCreate = outputPath.resolve(entry.getName());
+          fileToCreate.toFile().getParentFile().mkdirs();
+          Files.copy(zf.getInputStream(entry), fileToCreate);
+        }
+      }
+    } catch (IOException e) {
+      throw e;
+    }
+    return outputPath.toFile();
+  }
+
+  /**
    * Upload a kjar into the KIE Server
    *
-   * @param jarFile the file to upload
+   * @param jarFile the jar file to upload/install
+   * @param pomFile the pom file to upload/install
    * @throws Exception on any Exception
    * @see {https://developers.redhat.com/blog/2018/03/14/what-is-a-kjar/}
    */
-  private void uploadJar(File jarFile) throws Exception {
+  private void uploadJar(File jarFile, File pomFile) throws Exception {
     // Maven coordinates
     String groupIdAsUrl = release.getGroupId().replace('.', '/');
     String artifactId = release.getArtifactId();
@@ -206,21 +252,26 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
         + artifactId
         + "-" + versionId + ".jar";
 
-    ResponseEntity<String> response = jarUploader.uploadFile(jarFile, url);
+    if (workbenchHost.contains("localhost") ||workbenchHost.contains("127.0.0.1")){
+      // if running the JBPM Server locally add the kie workbench as possible target to fetch artifacts... as alternative you could add this to your system local settings.xml
+      File m2RepoDir = new File(this.mavenRepoPath);
+      String localRepositoryUrl = m2RepoDir.toURI().toURL().toExternalForm();
+      MavenSettings.getMavenRepositoryConfiguration().getRemoteRepositoriesForRequest().add(
+          new RemoteRepository.Builder("local", "maven2", localRepositoryUrl).build()
+      );
 
-    //if running the JBPM Server locally add the kie workbench as possible target to fetch artifacts... as alternative you could add this to your system local settings.xml
-    MavenSettings.getMavenRepositoryConfiguration().getRemoteRepositoriesForRequest().add(
-        new RemoteRepository.Builder("kie-workbench", "default", mavenBaseUrl)
-            .setAuthentication(new AuthenticationBuilder().addUsername(workbenchUser).addPassword(workbenchPwd).build())
-            .build()
-    );
-
-    if (response.getStatusCode().is2xxSuccessful()) {
-      LOGGER.info("Jar file {} successful uploaded into kie workbench", jarFile.getName());
-    } else {
-      throw new IOException(String
-          .format("Error while uploading jar file %s. This could be also caused by missing dependencies.",
-              jarFile.getAbsolutePath()));
+      // if running the JBPM Server locally install the artifact on local maven repo
+      MavenRepository.getMavenRepository().installArtifact(release.getReleaseIdForServerAPI(),jarFile, pomFile);
+      LOGGER.info("Jar file {} successful installed into local maven repository", jarFile.getName());
+    }else{
+      ResponseEntity<String> response = jarUploader.uploadFile(jarFile, url);
+      if (response.getStatusCode().is2xxSuccessful()) {
+        LOGGER.info("Jar file {} successful uploaded into kie workbench", jarFile.getName());
+      } else {
+        throw new IOException(String
+            .format("Error while uploading jar file %s. This could be also caused by missing dependencies.",
+                jarFile.getAbsolutePath()));
+      }
     }
   }
 
@@ -230,33 +281,6 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
    * @throws Exception on any Exception
    */
   private void createContainer() throws Exception {
-    String groupIdAsUrl = release.getGroupId().replace('.', '/');
-    String artifactId = release.getArtifactId();
-    String versionId = release.getVersion();
-
-    // if running the JBPM Server local we can cleanup existing old versions with same name to prevent loading issues
-    if (kieServerUrl.contains("localhost") || kieServerUrl.contains("127.0.0.1")){
-      try {
-        File oldJarFile = new File(mavenRepoPath + File.separator + groupIdAsUrl + File.separator + artifactId +
-            File.separator + versionId + File.separator + artifactId + "-" + versionId + ".jar");
-        if (oldJarFile.exists()){
-          oldJarFile.delete();
-        }
-        File oldPomFile = new File(mavenRepoPath + File.separator + groupIdAsUrl + File.separator + artifactId +
-            File.separator + versionId + File.separator + artifactId + "-" + versionId + ".pom");
-        if (oldPomFile.exists()){
-          oldPomFile.delete();
-        }
-        File resolverStatusFile = new File(mavenRepoPath + File.separator + groupIdAsUrl + File.separator + artifactId +
-            File.separator + versionId + File.separator + "resolver-status.properties");
-        if (resolverStatusFile.exists()){
-          resolverStatusFile.delete();
-        }
-      } catch (Exception e) {
-        LOGGER.warn("Can't delete old releases in local maven repository", e);
-      }
-    }
-
     String containerId = release.getContainerId();
     String containerAlias = release.getContainerAlias();
     ReleaseId releaseId = release.getReleaseIdForServerAPI();

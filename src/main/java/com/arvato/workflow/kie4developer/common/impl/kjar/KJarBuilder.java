@@ -69,7 +69,7 @@ public class KJarBuilder {
    * @return the kjar file
    * @throws Exception if compilation fails or I/O error occurs
    */
-  public File buildKjar(List<Class<? extends IDeployableDependency>> deployableDependencies,
+  public Map<String,File> buildKjar (List<Class<? extends IDeployableDependency>> deployableDependencies,
       List<Class<? extends IDeployableBPMNProcess>> deployableProcesses,
       List<Class<? extends IDeployableWorkItemHandler>> deployableWorkitemhandlers,
       List<Class> deployableServiceclasses) throws Exception {
@@ -142,11 +142,12 @@ public class KJarBuilder {
           String.format("Process compilation error: %s", builder.getResults().getMessages().toString()));
     }
 
+    File tmpdir = new File(System.getProperty("java.io.tmpdir"));
+    long timestamp = Instant.now().getEpochSecond();
+
     // build the kjar file that represents the kmodule
     File jarFile;
     try {
-      File tmpdir = new File(System.getProperty("java.io.tmpdir"));
-      long timestamp = Instant.now().getEpochSecond();
       String filename = release.getArtifactId() + "-" + release.getVersion() + "-" + timestamp + ".jar";
       jarFile = new File(tmpdir, filename);
       OutputStream os = new FileOutputStream(jarFile);
@@ -154,7 +155,19 @@ public class KJarBuilder {
       os.write(kieModule.getBytes());
       os.close();
     } catch (IOException e) {
-      throw new IOException("Kjar write error", e);
+      throw new IOException("Kjar write error (jar)", e);
+    }
+
+    // build the pom file that represents the kmodule
+    File pomFile;
+    try {
+      String filename = release.getArtifactId() + "-" + release.getVersion() + "-" + timestamp + ".pom";
+      pomFile = new File(tmpdir, filename);
+      OutputStream os = new FileOutputStream(pomFile);
+      os.write(pomXml.getBytes());
+      os.close();
+    } catch (IOException e) {
+      throw new IOException("Kjar write error (pom)", e);
     }
 
     // remove the generated default pom & src folder - is there any way to not generated it first?
@@ -168,7 +181,10 @@ public class KJarBuilder {
     }
 
     LOGGER.info("Kjar created: " + jarFile.getAbsolutePath());
-    return jarFile;
+    Map files = new HashMap<>();
+    files.put("jar", jarFile);
+    files.put("pom", pomFile);
+    return files;
   }
 
   /**
