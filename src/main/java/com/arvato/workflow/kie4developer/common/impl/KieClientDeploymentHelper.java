@@ -14,9 +14,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.appformer.maven.integration.Aether;
 import org.appformer.maven.integration.MavenRepository;
 import org.appformer.maven.integration.embedder.MavenSettings;
+import org.drools.compiler.kie.builder.impl.KieRepositoryImpl;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.kie.scanner.KieRepositoryScannerImpl;
 import org.kie.server.api.exception.KieServicesHttpException;
 import org.kie.server.api.model.KieContainerResource;
 import org.kie.server.api.model.KieServiceResponse.ResponseType;
@@ -42,10 +45,6 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private List<Class<? extends IDeployableBPMNProcess>> processesToDeploy;
   private List<Class> serviceClassesToDeploy;
   private List<Class<? extends IDeployableWorkItemHandler>> workItemHandlersToDeploy;
-  @Value("${maven.repository}")
-  private String mavenRepoPath;
-  @Value("${kieserver.location}")
-  private String kieServerUrl;
   // kie workbench connection parameter
   @Value("${kieworkbench.protocol}")
   private String workbenchProtocol;
@@ -57,10 +56,6 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private String workbenchContext;
   @Value("${kieworkbench.context.maven}")
   private String workbenchMavenContext;
-  @Value("${kieworkbench.user}")
-  private String workbenchUser;
-  @Value("${kieworkbench.pwd}")
-  private String workbenchPwd;
   @Value("${kieserver.host}")
   private String kieserverHost;
 
@@ -209,20 +204,19 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     String versionId = release.getVersion();
 
     if (kieserverHost.contains("localhost") || kieserverHost.contains("127.0.0.1")) {
-      // if running the JBPM Server locally add the kie workbench as possible target to fetch artifacts... as alternative you could add this to your system local settings.xml
+      // if running on local jbpm server provide the artifacts via local maven repository
       File repositoryDir = Files.createTempDirectory(UUID.randomUUID().toString()).toFile();
       String repositoryUrl = repositoryDir.toURI().toURL().toExternalForm();
 
-      // install the jar into the temp local repository
-//      MavenRepository.defaultMavenRepository = null;
-//      Aether.instance = null;
-//      MavenSettings.getSettings().setLocalRepository(repositoryDir.getAbsolutePath());
+      // workaround to reset the maven repository for the jbpm server. This is required for running multiple unittest.
+      MavenRepository.defaultMavenRepository = null;
+      Aether.instance = null;
+      KieRepositoryImpl.setInternalKieScanner(new KieRepositoryScannerImpl());
+      MavenSettings.getSettings().setLocalRepository(repositoryDir.getAbsolutePath());
 
+      // install the jar into the temp local repository
       MavenRepository.getMavenRepository().installArtifact(release.getReleaseIdForServerAPI(), jarFile, pomFile);
-//      File jarInRepo = new File(repositoryDir.getAbsolutePath() + "/" + groupIdAsUrl + "/" + artifactId + "/" + versionId + "/" + artifactId + "-" + versionId + ".jar");
-      File jarInRepo = new File(
-          mavenRepoPath + "/" + groupIdAsUrl + "/" + artifactId + "/" + versionId + "/" + artifactId + "-" + versionId
-              + ".jar");
+      File jarInRepo = new File(repositoryDir.getAbsolutePath() + "/" + groupIdAsUrl + "/" + artifactId + "/" + versionId + "/" + artifactId + "-" + versionId + ".jar");
       if (jarInRepo.exists()) {
         LOGGER
             .info("Jar file {} successful installed into local maven repository: {}", jarFile.getName(), repositoryDir);
@@ -231,29 +225,27 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
             .format("Error while installing jar file into local maven repository %s.",
                 jarFile.getAbsolutePath()));
       }
-      // set the temp local repository as new remote repository for the local running kie server
+      // add the temp local maven repository as new remote repository for the local running kie server; the server fetch from there
       MavenSettings.getMavenRepositoryConfiguration().getRemoteRepositoriesForRequest().clear();
       RemoteRepository remoteRepository = new RemoteRepository.Builder("local", "maven2", repositoryUrl).build();
       MavenSettings.getMavenRepositoryConfiguration().getRemoteRepositoriesForRequest().add(remoteRepository);
     } else {
-      if (!workbenchHost.contains("localhost") && !workbenchHost.contains("127.0.0.1")) {
-        // if running the kie workbench external upload the kjar to this
-        String mavenBaseUrl =
-            workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/"
-                + workbenchMavenContext;
-        String url = mavenBaseUrl + "/" + groupIdAsUrl + "/" + artifactId + "/" + versionId + "/"
-            + artifactId
-            + "-" + versionId + ".jar";
+      // if deployment target is a external jbpm server provide the artifacts via kie workbench
+      String mavenBaseUrl =
+          workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/"
+              + workbenchMavenContext;
+      String url = mavenBaseUrl + "/" + groupIdAsUrl + "/" + artifactId + "/" + versionId + "/"
+          + artifactId
+          + "-" + versionId + ".jar";
 
-        ResponseEntity<String> response = jarUploader.uploadFile(jarFile, url);
-        if (response.getStatusCode().is2xxSuccessful()) {
-          LOGGER.info("Jar file {} successful uploaded into kie workbench: {}", jarFile.getName(), mavenBaseUrl);
-        } else {
-          throw new IOException(String
-              .format(
-                  "Error while uploading jar file %s to kie workbench. This could be also caused by missing dependencies.",
-                  jarFile.getAbsolutePath()));
-        }
+      ResponseEntity<String> response = jarUploader.uploadFile(jarFile, url);
+      if (response.getStatusCode().is2xxSuccessful()) {
+        LOGGER.info("Jar file {} successful uploaded into kie workbench: {}", jarFile.getName(), mavenBaseUrl);
+      } else {
+        throw new IOException(String
+            .format(
+                "Error while uploading jar file %s to kie workbench. This could be also caused by missing dependencies.",
+                jarFile.getAbsolutePath()));
       }
     }
   }
