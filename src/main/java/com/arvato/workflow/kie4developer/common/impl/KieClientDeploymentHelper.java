@@ -1,7 +1,5 @@
 package com.arvato.workflow.kie4developer.common.impl;
 
-import static org.apache.maven.artifact.repository.ArtifactRepositoryPolicy.*;
-
 import com.arvato.workflow.kie4developer.common.impl.kjar.JarUploader;
 import com.arvato.workflow.kie4developer.common.impl.kjar.KJarBuilder;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableBPMNProcess;
@@ -12,26 +10,13 @@ import com.arvato.workflow.kie4developer.common.interfaces.IRelease;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import org.apache.maven.Maven;
-import org.apache.maven.artifact.repository.ArtifactRepositoryPolicy;
-import org.apache.maven.artifact.repository.MavenArtifactRepository;
-import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
-import org.apache.maven.repository.UserLocalArtifactRepository;
 import org.appformer.maven.integration.MavenRepository;
 import org.appformer.maven.integration.embedder.MavenSettings;
-import org.apache.maven.artifact.repository.*;
-import org.appformer.maven.support.AFReleaseId;
 import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.repository.RemoteRepository.Builder;
-import org.eclipse.aether.util.repository.AuthenticationBuilder;
 import org.kie.server.api.exception.KieServicesHttpException;
 import org.kie.server.api.model.KieContainerResource;
 import org.kie.server.api.model.KieServiceResponse.ResponseType;
@@ -76,6 +61,8 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private String workbenchUser;
   @Value("${kieworkbench.pwd}")
   private String workbenchPwd;
+  @Value("${kieserver.host}")
+  private String kieserverHost;
 
   public KieClientDeploymentHelper(KJarBuilder kJarBuilder, IRelease release, KieClient kieClient,
       JarUploader jarUploader) {
@@ -135,11 +122,13 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
             migrationReport.addAll(kieClient.getProcessAdminClient()
                 .migrateProcessInstances(oldContainerId, processInstanceIds,
                     release.getContainerId(), instance.getProcessId()));
-            for (MigrationReportInstance report : migrationReport){
-              if (!report.isSuccessful()){
-                LOGGER.error("MigrationReport - failed to migrate process instance {}.\n{}", report.getProcessInstanceId(), report.getLogs());
-              }else{
-                LOGGER.info("MigrationReport - process instance {} successful migrated.", report.getProcessInstanceId());
+            for (MigrationReportInstance report : migrationReport) {
+              if (!report.isSuccessful()) {
+                LOGGER.error("MigrationReport - failed to migrate process instance {}.\n{}",
+                    report.getProcessInstanceId(), report.getLogs());
+              } else {
+                LOGGER
+                    .info("MigrationReport - process instance {} successful migrated.", report.getProcessInstanceId());
               }
             }
           } catch (InstantiationException e) {
@@ -174,7 +163,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
      */
 
     // first we have to build the kjar release file by our own
-    Map<String,File> jarAndPomFile;
+    Map<String, File> jarAndPomFile;
     try {
       jarAndPomFile = kJarBuilder
           .buildKjar(dependenciesToDeploy, processesToDeploy, workItemHandlersToDeploy, serviceClassesToDeploy);
@@ -206,33 +195,6 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   }
 
   /**
-   * Unzip a zip/jar to a tmp directory
-   *
-   * @param zipFile the jar or zip file to extract
-   * @return the temp directory which contains all extracted folders and files of the archive
-   */
-  private File unzip(File zipFile) throws IOException {
-    Path outputPath = Files.createTempDirectory(UUID.randomUUID().toString());
-    try (ZipFile zf = new ZipFile(zipFile)) {
-      Enumeration<? extends ZipEntry> zipEntries = zf.entries();
-      while (zipEntries.hasMoreElements()) {
-        ZipEntry entry = zipEntries.nextElement();
-        if (entry.isDirectory()) {
-          Path dirToCreate = outputPath.resolve(entry.getName());
-          Files.createDirectories(dirToCreate);
-        } else {
-          Path fileToCreate = outputPath.resolve(entry.getName());
-          fileToCreate.toFile().getParentFile().mkdirs();
-          Files.copy(zf.getInputStream(entry), fileToCreate);
-        }
-      }
-    } catch (IOException e) {
-      throw e;
-    }
-    return outputPath.toFile();
-  }
-
-  /**
    * Upload a kjar into the KIE Server
    *
    * @param jarFile the jar file to upload/install
@@ -246,32 +208,52 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     String artifactId = release.getArtifactId();
     String versionId = release.getVersion();
 
-    String mavenBaseUrl = workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/"
-        + workbenchMavenContext;
-    String url = mavenBaseUrl + "/" + groupIdAsUrl + "/" + artifactId + "/" + versionId + "/"
-        + artifactId
-        + "-" + versionId + ".jar";
-
-    if (workbenchHost.contains("localhost") ||workbenchHost.contains("127.0.0.1")){
+    if (kieserverHost.contains("localhost") || kieserverHost.contains("127.0.0.1")) {
       // if running the JBPM Server locally add the kie workbench as possible target to fetch artifacts... as alternative you could add this to your system local settings.xml
-      File m2RepoDir = Files.createTempDirectory(UUID.randomUUID().toString()).toFile();
-      String localRepositoryUrl = m2RepoDir.toURI().toURL().toExternalForm();
-      MavenSettings.getMavenRepositoryConfiguration().getRemoteRepositoriesForRequest().clear();
-      MavenSettings.getMavenRepositoryConfiguration().getRemoteRepositoriesForRequest().add(
-          new RemoteRepository.Builder("local", "maven2", localRepositoryUrl).build()
-      );
+      File repositoryDir = Files.createTempDirectory(UUID.randomUUID().toString()).toFile();
+      String repositoryUrl = repositoryDir.toURI().toURL().toExternalForm();
 
-      // if running the JBPM Server locally install the artifact on local maven repo
-      MavenRepository.getMavenRepository().installArtifact(release.getReleaseIdForServerAPI(),jarFile, pomFile);
-      LOGGER.info("Jar file {} successful installed into local maven repository", jarFile.getName());
-    }else{
-      ResponseEntity<String> response = jarUploader.uploadFile(jarFile, url);
-      if (response.getStatusCode().is2xxSuccessful()) {
-        LOGGER.info("Jar file {} successful uploaded into kie workbench", jarFile.getName());
+      // install the jar into the temp local repository
+//      MavenRepository.defaultMavenRepository = null;
+//      Aether.instance = null;
+//      MavenSettings.getSettings().setLocalRepository(repositoryDir.getAbsolutePath());
+
+      MavenRepository.getMavenRepository().installArtifact(release.getReleaseIdForServerAPI(), jarFile, pomFile);
+//      File jarInRepo = new File(repositoryDir.getAbsolutePath() + "/" + groupIdAsUrl + "/" + artifactId + "/" + versionId + "/" + artifactId + "-" + versionId + ".jar");
+      File jarInRepo = new File(
+          mavenRepoPath + "/" + groupIdAsUrl + "/" + artifactId + "/" + versionId + "/" + artifactId + "-" + versionId
+              + ".jar");
+      if (jarInRepo.exists()) {
+        LOGGER
+            .info("Jar file {} successful installed into local maven repository: {}", jarFile.getName(), repositoryDir);
       } else {
         throw new IOException(String
-            .format("Error while uploading jar file %s. This could be also caused by missing dependencies.",
+            .format("Error while installing jar file into local maven repository %s.",
                 jarFile.getAbsolutePath()));
+      }
+      // set the temp local repository as new remote repository for the local running kie server
+      MavenSettings.getMavenRepositoryConfiguration().getRemoteRepositoriesForRequest().clear();
+      RemoteRepository remoteRepository = new RemoteRepository.Builder("local", "maven2", repositoryUrl).build();
+      MavenSettings.getMavenRepositoryConfiguration().getRemoteRepositoriesForRequest().add(remoteRepository);
+    } else {
+      if (!workbenchHost.contains("localhost") && !workbenchHost.contains("127.0.0.1")) {
+        // if running the kie workbench external upload the kjar to this
+        String mavenBaseUrl =
+            workbenchProtocol + "://" + workbenchHost + ":" + workbenchPort + "/" + workbenchContext + "/"
+                + workbenchMavenContext;
+        String url = mavenBaseUrl + "/" + groupIdAsUrl + "/" + artifactId + "/" + versionId + "/"
+            + artifactId
+            + "-" + versionId + ".jar";
+
+        ResponseEntity<String> response = jarUploader.uploadFile(jarFile, url);
+        if (response.getStatusCode().is2xxSuccessful()) {
+          LOGGER.info("Jar file {} successful uploaded into kie workbench: {}", jarFile.getName(), mavenBaseUrl);
+        } else {
+          throw new IOException(String
+              .format(
+                  "Error while uploading jar file %s to kie workbench. This could be also caused by missing dependencies.",
+                  jarFile.getAbsolutePath()));
+        }
       }
     }
   }
@@ -306,7 +288,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     if (container != null) {
       if (cancelAllRunningInstances) {
         boolean retry;
-        do{
+        do {
           retry = false;
           // check if we have running process instances
           List<ProcessInstance> processInstances = kieClient.getProcessClient()
@@ -316,15 +298,16 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
             processInstanceIds.add(processInstance.getId());
           }
           if (processInstanceIds.size() > 0) {
-            try{
+            try {
               kieClient.getProcessClient().abortProcessInstances(containerId, processInstanceIds);
               LOGGER.info("{} Process Instances aborted", processInstanceIds.size());
-            }catch (KieServicesHttpException e){
+            } catch (KieServicesHttpException e) {
               // this case happens when a subprocess instance was already canceled by the related parent instance
-              if (e.getResponseBody().contains("Could not find process instance with id")){
-                LOGGER.warn("Failure while aborting {} Process Instances: {}", processInstanceIds.size(), e.getResponseBody());
+              if (e.getResponseBody().contains("Could not find process instance with id")) {
+                LOGGER.warn("Failure while aborting {} Process Instances: {}", processInstanceIds.size(),
+                    e.getResponseBody());
                 retry = true;
-              }else{
+              } else {
                 throw e;
               }
             }
