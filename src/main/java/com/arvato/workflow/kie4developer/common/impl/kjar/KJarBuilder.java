@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.file.DirectoryStream;
@@ -69,7 +70,7 @@ public class KJarBuilder {
    * @return the kjar file
    * @throws Exception if compilation fails or I/O error occurs
    */
-  public Map<String,File> buildKjar (List<Class<? extends IDeployableDependency>> deployableDependencies,
+  public Map<String, File> buildKjar(List<Class<? extends IDeployableDependency>> deployableDependencies,
       List<Class<? extends IDeployableBPMNProcess>> deployableProcesses,
       List<Class<? extends IDeployableWorkItemHandler>> deployableWorkitemhandlers,
       List<Class> deployableServiceclasses) throws Exception {
@@ -251,9 +252,18 @@ public class KJarBuilder {
     String artifactId = instance.getMavenArtifactId();
     String versionId = instance.getMavenVersionId();
 
-    File jarFile = new File(mavenRepoPath + File.separator +
-        groupId.replace(".", File.separator) + File.separator
-        + artifactId + File.separator + versionId + File.separator + artifactId + "-" + versionId + ".jar");
+    File jarFile = getJarFile(dependencyClass);
+    if (jarFile == null) {
+      // running via IDE... fetch dependencies from maven repo
+      jarFile = new File(mavenRepoPath + File.separator +
+          groupId.replace(".", File.separator) + File.separator
+          + artifactId + File.separator + versionId + File.separator + artifactId + "-" + versionId + ".jar");
+    } else {
+      // running as fat jar... fetch dependencies from fat jar
+      File unzippedJar = unzip(jarFile);
+      jarFile = new File(unzippedJar, File.separator + "BOOT-INF" + File.separator + "lib" + File.separator +
+          artifactId + "-" + versionId + ".jar");
+    }
     File unzippedJar = unzip(jarFile);
 
     List<Path> allClassFilesFromJar = Files.walk(unzippedJar.toPath())
@@ -264,6 +274,31 @@ public class KJarBuilder {
     for (Path classFile : allClassFilesFromJar) {
       addClassFileToDeployment(classFile, classFilesToDeploy);
     }
+  }
+
+  /**
+   * Get the fat-jar as file
+   *
+   * @param clazz the class reference that is inside the fat-jar
+   * @return the fat-jar file or null
+   */
+  private File getJarFile(Class clazz) {
+    String compiledClassesDir = clazz.getProtectionDomain().getCodeSource().getLocation().getFile();
+    if (!compiledClassesDir.contains(".jar")) {
+      return null;
+    }
+    compiledClassesDir = compiledClassesDir.startsWith("file:") ? compiledClassesDir.substring(5) : compiledClassesDir;
+    compiledClassesDir =
+        compiledClassesDir.contains("!") ? compiledClassesDir.substring(0, compiledClassesDir.indexOf("!"))
+            : compiledClassesDir;
+    compiledClassesDir = compiledClassesDir.startsWith("/") ? compiledClassesDir.substring(1) : compiledClassesDir;
+    try {
+      compiledClassesDir = URLDecoder.decode(compiledClassesDir, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      LOGGER.error("Error while decoding dir: " + compiledClassesDir, e);
+      return null;
+    }
+    return new File(compiledClassesDir);
   }
 
   /**
@@ -320,9 +355,12 @@ public class KJarBuilder {
   private void addClassFileToDeployment(Class clazz, Map<String, File> classFilesToDeploy) throws IOException {
     String compiledClassesDir = clazz.getProtectionDomain().getCodeSource().getLocation().getFile();
     compiledClassesDir = compiledClassesDir.startsWith("file:") ? compiledClassesDir.substring(5) : compiledClassesDir;
-    compiledClassesDir = (compiledClassesDir.startsWith("/") && compiledClassesDir.contains(":")) ? compiledClassesDir.substring(1) : compiledClassesDir;
+    compiledClassesDir =
+        (compiledClassesDir.startsWith("/") && compiledClassesDir.contains(":")) ? compiledClassesDir.substring(1)
+            : compiledClassesDir;
     compiledClassesDir = URLDecoder.decode(compiledClassesDir, "UTF-8");
-    Path directoryStreamPath = Paths.get(compiledClassesDir + clazz.getPackage().getName().replace(".", File.separator));
+    Path directoryStreamPath = Paths
+        .get(compiledClassesDir + clazz.getPackage().getName().replace(".", File.separator));
     directoryStreamPath = extractFileWhenIncludedInJar(directoryStreamPath);
 
     String pattern = "glob:**/" + clazz.getSimpleName() + "*.class";
