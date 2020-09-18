@@ -291,7 +291,6 @@ public class KJarBuilder {
     compiledClassesDir =
         compiledClassesDir.contains("!") ? compiledClassesDir.substring(0, compiledClassesDir.indexOf("!"))
             : compiledClassesDir;
-    compiledClassesDir = compiledClassesDir.startsWith("/") ? compiledClassesDir.substring(1) : compiledClassesDir;
     try {
       compiledClassesDir = URLDecoder.decode(compiledClassesDir, "UTF-8");
     } catch (UnsupportedEncodingException e) {
