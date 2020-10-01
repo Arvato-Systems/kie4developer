@@ -27,7 +27,7 @@ For runtime you need a remote KIE Workbench which can be connected via following
 kieworkbench.protocol=http
 kieworkbench.host=localhost
 kieworkbench.port=8080
-kieworkbench.context=jbpm-console
+kieworkbench.context=business-central
 kieworkbench.user=admin
 kieworkbench.pwd=admin
 ```
@@ -42,13 +42,13 @@ To start the Application direct on the target-System just run `java -jar workflo
 How to run it
 ------------------------------
 
-Make sure you have a kie workbench instance up and running. E.g. use the existing [docker image](https://hub.docker.com/r/jboss/jbpm-workbench-showcase):
+Make sure you have a kie workbench instance up and running. E.g. use the existing [docker image](https://hub.docker.com/r/jboss/business-central-workbench-showcase/):
 
 ```
-docker run -p 8080:8080 -p 8001:8001 -d --name jbpm-workbench jboss/jbpm-workbench-showcase:7.15.0.Final
+docker run -p 8080:8080 -p 8001:8001 -d --name jbpm-workbench jboss/business-central-workbench-showcase:7.23.0.Final
 
 URL & Credentails (start-up takes some time...):
-http://localhost:8080/jbpm-console
+http://localhost:8080/business-central
 admin/admin
 ```
 
@@ -70,7 +70,7 @@ kieserver/kieserver1!
 If you like to use an external kie server please run this separately. E.g. use the existing [docker image](https://hub.docker.com/r/jboss/kie-server-showcase):
 
 ```
-docker run -p 8180:8080 -d --env "JAVA_OPTS=-Xms256m -Xmx1024m -Djava.net.preferIPv4Stack=true -Dorg.kie.server.bypass.auth.user=true" --name kie-server --link jbpm-workbench:kie-wb jboss/kie-server-showcase:7.15.0.Final
+docker run -p 8180:8080 -d --env "JAVA_OPTS=-Xms256m -Xmx1024m -Djava.net.preferIPv4Stack=true -Dorg.kie.server.bypass.auth.user=true" --name kie-server --link jbpm-workbench:kie-wb jboss/kie-server-showcase:7.23.0.Final
 
 URL & Credentails (start-up takes some time...):
 http://localhost:8180/kie-server/docs/

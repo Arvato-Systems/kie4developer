@@ -20,7 +20,10 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
+    properties = {
+        "spring.application.autodeploy=false"
+    })
 public class KIE4DeveloperApplicationTest {
 
   @Autowired
@@ -61,14 +64,17 @@ public class KIE4DeveloperApplicationTest {
 
   @Test
   public void testConnectionToKIEWorkbench() {
-    try {
-      String kieWorkbenchUrl =
-          kieWorkbenchProtocol + "://" + kieWorkbenchHost + ":" + kieWorkbenchPort + "/" + kieWorkbenchContext;
-      ResponseEntity<String> kieWorkbenchWebsite = new RestTemplate().getForEntity(kieWorkbenchUrl, String.class);
-      assertTrue("KIE Workbench website is not available", kieWorkbenchWebsite.getBody().contains("Business Central"));
-    } catch (ResourceAccessException e) {
-      fail("Connection to KIE Workbench can't be established. "
-          + "Please start a external workbench: docker run -p 8080:8080 -p 8001:8001 -d --name jbpm-workbench jboss/jbpm-workbench-showcase:7.15.0.Final");
+    if (!kieWorkbenchHost.contains("localhost") && !kieWorkbenchHost.contains("127.0.0.1")){
+      try {
+        String kieWorkbenchUrl =
+            kieWorkbenchProtocol + "://" + kieWorkbenchHost + ":" + kieWorkbenchPort + "/" + kieWorkbenchContext
+                + "/kie-wb.jsp";
+        ResponseEntity<String> kieWorkbenchWebsite = new RestTemplate().getForEntity(kieWorkbenchUrl, String.class);
+        assertTrue("KIE Workbench website is not available", kieWorkbenchWebsite.getBody().contains("Business Central"));
+      } catch (ResourceAccessException e) {
+        fail(
+            "Connection to KIE Workbench can't be established. Please start a external workbench: docker run -p 8080:8080 -p 8001:8001 -d --name jbpm-workbench jboss/jbpm-workbench-showcase:7.15.0.Final && docker logs -f jbpm-workbench");
+      }
     }
   }
 
