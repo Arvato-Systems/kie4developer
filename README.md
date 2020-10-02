@@ -36,6 +36,7 @@ kieworkbench.pwd=admin
 
 How to build it
 ------------------------------
+
 To create your Spring Boot fat jar just run `mvn:package`. Use `mvn:package deploy` for uploading your artifact to the repository server.
 Ensure that the default installed java version in the environment is JDK 8.
 
@@ -80,6 +81,7 @@ docker run -p 8180:8080 -d --env "JAVA_OPTS=-Xms256m -Xmx1024m -Djava.net.prefer
 
 How to implement your own workflow solution
 ------------------------------
+
 Configure your project settings within [application.properties](src/main/resources/application.properties).
 
 ```
