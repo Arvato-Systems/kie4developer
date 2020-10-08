@@ -286,9 +286,15 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
           List<ProcessInstance> processInstances = kieClient.getProcessClient()
               .findProcessInstances(containerId, 0, Integer.MAX_VALUE);
           List<Long> processInstanceIds = new ArrayList<>();
-          for (ProcessInstance processInstance : processInstances) {
-            processInstanceIds.add(processInstance.getId());
+          int chunkSize = 100;
+          for (int i = 0; i < processInstanceIds.size(); i++){
+            if (i == chunkSize){
+              retry = true;
+              break;
+            }
+            processInstanceIds.add(processInstances.get(i).getId());
           }
+
           if (processInstanceIds.size() > 0) {
             try {
               kieClient.getProcessClient().abortProcessInstances(containerId, processInstanceIds);
