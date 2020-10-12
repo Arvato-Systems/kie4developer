@@ -22,6 +22,7 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.kie.scanner.KieRepositoryScannerImpl;
 import org.kie.server.api.exception.KieServicesHttpException;
 import org.kie.server.api.model.KieContainerResource;
+import org.kie.server.api.model.KieContainerStatus;
 import org.kie.server.api.model.KieServiceResponse.ResponseType;
 import org.kie.server.api.model.ReleaseId;
 import org.kie.server.api.model.ServiceResponse;
@@ -278,10 +279,18 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     KieContainerResource container = kieClient.getKieServicesClient().getContainerInfo(containerId).getResult();
     boolean result = false;
     if (container != null) {
+
+      // if the container is unhealthy we must fix this first by re-deploy it.
+      if (!container.getStatus().equals(KieContainerStatus.STARTED) && cancelAllRunningInstances){
+        LOGGER.warn("Failure while aborting Process Instances: Container is in status {} which does not allow aborts.", container.getStatus().name());
+        cancelAllRunningInstances = false;
+      }
+
       if (cancelAllRunningInstances) {
         boolean retry;
         do {
           retry = false;
+
           // check if we have running process instances
           List<ProcessInstance> processInstances = kieClient.getProcessClient()
               .findProcessInstances(containerId, 0, Integer.MAX_VALUE);
