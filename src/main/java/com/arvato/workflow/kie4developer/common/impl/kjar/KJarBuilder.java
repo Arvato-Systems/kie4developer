@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.file.DirectoryStream;
@@ -115,7 +116,9 @@ public class KJarBuilder {
     resources.add(ResourceFactory.newByteArrayResource(pomProperties.getBytes()).setSourcePath(
         "META-INF/maven/" + release.getGroupId() + File.separator + release.getArtifactId() + "/pom.properties"));
     for (Class<? extends IDeployableBPMNProcess> deployableProcess : deployableProcesses) {
-      resources.add(deployableProcess.newInstance().getBPMNModel()); // .bpmn
+      if (!deployableProcess.isInterface() && !Modifier.isAbstract(deployableProcess.getModifiers())){
+        resources.add(deployableProcess.newInstance().getBPMNModel()); // .bpmn
+      }
     }
     for (Entry<String, File> deployableWorkitemhandlerFileSet : classFilesToDeploy.entrySet()) {
       try {
