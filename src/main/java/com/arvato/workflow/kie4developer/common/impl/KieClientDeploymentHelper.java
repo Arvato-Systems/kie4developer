@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.apache.maven.model.Dependency;
 import org.appformer.maven.integration.Aether;
 import org.appformer.maven.integration.MavenRepository;
 import org.appformer.maven.integration.embedder.MavenSettings;
@@ -28,6 +29,8 @@ import org.kie.server.api.model.ReleaseId;
 import org.kie.server.api.model.ServiceResponse;
 import org.kie.server.api.model.admin.MigrationReportInstance;
 import org.kie.server.api.model.instance.ProcessInstance;
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,37 +42,93 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(KieClientDeploymentHelper.class);
   private IRelease release;
+  private EffectivePomReader effectivePomReader;
   private KieClient kieClient;
   private KJarBuilder kJarBuilder;
   private JarUploader jarUploader;
-  private List<Class<? extends IDeployableDependency>> dependenciesToDeploy;
+  private List<IDeployableDependency> dependenciesToDeploy;
   private List<Class<? extends IDeployableBPMNProcess>> processesToDeploy;
   private List<Class> serviceClassesToDeploy;
   private List<Class<? extends IDeployableWorkItemHandler>> workItemHandlersToDeploy;
-  // kie workbench connection parameter
-  @Value("${kieworkbench.protocol}")
+  private String kieServerHost;
+  private String kieServerUrl;
   private String workbenchProtocol;
-  @Value("${kieworkbench.host}")
   private String workbenchHost;
-  @Value("${kieworkbench.port}")
   private int workbenchPort;
-  @Value("${kieworkbench.context}")
   private String workbenchContext;
-  @Value("${kieworkbench.context.maven}")
   private String workbenchMavenContext;
-  @Value("${kieserver.host}")
-  private String kieserverHost;
 
-  public KieClientDeploymentHelper(KJarBuilder kJarBuilder, IRelease release, KieClient kieClient,
-      JarUploader jarUploader) {
-    this.kJarBuilder = kJarBuilder;
+  static {
+    // change the optimizer to not generate negative IDs for entities on unittests and to be able to reuse db connections
+    System.setProperty("hibernate.id.optimizer.pooled.preferred", "pooled-lo");
+  }
+
+  public KieClientDeploymentHelper(
+      IRelease release,
+      EffectivePomReader effectivePomReader,
+      KJarBuilder kJarBuilder,
+      KieClient kieClient,
+      JarUploader jarUploader,
+      @Value("${kieworkbench.protocol}") String workbenchProtocol,
+      @Value("${kieworkbench.host}") String workbenchHost,
+      @Value("${kieworkbench.port}") int workbenchPort,
+      @Value("${kieworkbench.context}") String workbenchContext,
+      @Value("${kieworkbench.context.maven}") String workbenchMavenContext,
+      @Value("${kieserver.host}") String kieServerHost,
+      @Value("${kieserver.location}") String kieServerUrl) {
     this.release = release;
+    this.effectivePomReader = effectivePomReader;
+    this.kJarBuilder = kJarBuilder;
     this.kieClient = kieClient;
     this.jarUploader = jarUploader;
-    this.dependenciesToDeploy = new ArrayList<>();
-    this.processesToDeploy = new ArrayList<>();
-    this.serviceClassesToDeploy = new ArrayList<>();
-    this.workItemHandlersToDeploy = new ArrayList<>();
+    this.kieServerHost = kieServerHost;
+    this.kieServerUrl = kieServerUrl;
+    this.workbenchProtocol = workbenchProtocol;
+    this.workbenchHost = workbenchHost;
+    this.workbenchPort = workbenchPort;
+    this.workbenchContext = workbenchContext;
+    this.workbenchMavenContext = workbenchMavenContext;
+    this.processesToDeploy = new ArrayList<>(
+        new Reflections(this.release.getGroupId() + ".processes").getSubTypesOf(IDeployableBPMNProcess.class));
+    this.serviceClassesToDeploy = new ArrayList<>(
+        new Reflections(this.release.getGroupId() + ".services", new SubTypesScanner(false))
+            .getSubTypesOf(Object.class));
+    this.workItemHandlersToDeploy = new ArrayList<>(
+        new Reflections(this.release.getGroupId() + ".workitemhandler")
+            .getSubTypesOf(IDeployableWorkItemHandler.class));
+    this.dependenciesToDeploy = getDependencies();
+
+    System.setProperty("kieserver.location", this.kieServerUrl); // required for JavaWorkItemHandler
+  }
+
+  /**
+   * Get the dependencies defined within maven pom.xml
+   *
+   * @return the list of dependencies
+   */
+  private List<IDeployableDependency> getDependencies() {
+    List<IDeployableDependency> dependencyList = new ArrayList<>();
+    for (Dependency dependency : effectivePomReader.getPomModel().getDependencies()) {
+      if ("compile".equalsIgnoreCase(dependency.getScope()) || dependency.getScope() == null) {
+        dependencyList.add(new IDeployableDependency() {
+          @Override
+          public String getMavenGroupId() {
+            return dependency.getGroupId();
+          }
+
+          @Override
+          public String getMavenArtifactId() {
+            return dependency.getArtifactId();
+          }
+
+          @Override
+          public String getMavenVersionId() {
+            return dependency.getVersion();
+          }
+        });
+      }
+    }
+    return dependencyList;
   }
 
   @Override
@@ -78,7 +137,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   }
 
   @Override
-  public void setDependenciesToDeploy(List<Class<? extends IDeployableDependency>> dependenciesToDeploy) {
+  public void setDependenciesToDeploy(List<IDeployableDependency> dependenciesToDeploy) {
     this.dependenciesToDeploy = dependenciesToDeploy;
   }
 
@@ -172,9 +231,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     try {
       uploadJar(jarAndPomFile.get("jar"), jarAndPomFile.get("pom"));
     } catch (Exception e) {
-      LOGGER.error(String
-          .format("Error while uploading jar file %s. This could be also caused by missing dependencies",
-              jarAndPomFile.get("jar").getAbsolutePath()), e);
+      LOGGER.error("Error while uploading jar file {}}. This could be also caused by missing dependencies", jarAndPomFile.get("jar").getAbsolutePath(), e);
       return false;
     }
 
@@ -182,7 +239,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     try {
       createContainer();
     } catch (Exception e) {
-      LOGGER.error(String.format("Error while creating container %s", release.getContainerId()), e);
+      LOGGER.error("Error while creating container {}", release.getContainerId(), e);
       return false;
     }
 
@@ -204,7 +261,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     String artifactId = release.getArtifactId();
     String versionId = release.getVersion();
 
-    if (kieserverHost.contains("localhost") || kieserverHost.contains("127.0.0.1")) {
+    if (kieServerHost.contains("localhost") || kieServerHost.contains("127.0.0.1")) {
       // if running on local jbpm server provide the artifacts via local maven repository
       File repositoryDir = Files.createTempDirectory(UUID.randomUUID().toString()).toFile();
       String repositoryUrl = repositoryDir.toURI().toURL().toExternalForm();
@@ -217,7 +274,9 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 
       // install the jar into the temp local repository
       MavenRepository.getMavenRepository().installArtifact(release.getReleaseIdForServerAPI(), jarFile, pomFile);
-      File jarInRepo = new File(repositoryDir.getAbsolutePath() + "/" + groupIdAsUrl + "/" + artifactId + "/" + versionId + "/" + artifactId + "-" + versionId + ".jar");
+      File jarInRepo = new File(
+          repositoryDir.getAbsolutePath() + "/" + groupIdAsUrl + "/" + artifactId + "/" + versionId + "/" + artifactId
+              + "-" + versionId + ".jar");
       if (jarInRepo.exists()) {
         LOGGER
             .info("Jar file {} successful installed into local maven repository: {}", jarFile.getName(), repositoryDir);
@@ -273,45 +332,59 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     LOGGER.info("Container {} for release {} successful created", containerId, releaseId);
   }
 
+  @Override
+  public boolean undeploy(boolean cancelAllRunningInstances) {
+    return undeploy(release.getContainerId(), cancelAllRunningInstances);
+  }
+
+  /**
+   * Undeploy a running container
+   *
+   * @param containerId the container id to undeploy
+   * @param cancelAllRunningInstances <code>true</code> if running process instances should be canceled
+   * @return <code>true</code> if undeployment was successful, otherwise <code>false</code>
+   */
   private boolean undeploy(String containerId, boolean cancelAllRunningInstances) {
     LOGGER.info("Undeployment on KIE-Server...");
     // send deployment command to server
     KieContainerResource container = kieClient.getKieServicesClient().getContainerInfo(containerId).getResult();
     boolean result = false;
     if (container != null) {
-
       // if the container is unhealthy we must fix this first by re-deploy it.
-      if (!container.getStatus().equals(KieContainerStatus.STARTED) && cancelAllRunningInstances){
-        LOGGER.warn("Failure while aborting Process Instances: Container is in status {} which does not allow aborts.", container.getStatus().name());
-        cancelAllRunningInstances = false;
+      if (!container.getStatus().equals(KieContainerStatus.STARTED) && cancelAllRunningInstances) {
+        LOGGER.warn("Error while aborting Process Instances: KIE Container {} is in status {} which does not allow aborts of process instances", containerId, container.getStatus().name());
+        return result;
       }
 
-      if (cancelAllRunningInstances) {
-        boolean retry;
-        do {
-          retry = false;
+      boolean retry;
+      do {
+        retry = false;
 
-          // check if we have running process instances
-          List<ProcessInstance> processInstances = kieClient.getProcessClient()
-              .findProcessInstances(containerId, 0, Integer.MAX_VALUE);
-          List<Long> processInstanceIds = new ArrayList<>();
-          int chunkSize = 100;
-          for (int i = 0; i < processInstanceIds.size(); i++){
-            if (i == chunkSize){
-              retry = true;
-              break;
-            }
-            processInstanceIds.add(processInstances.get(i).getId());
+        // check if we have running process instances
+        List<ProcessInstance> processInstances = kieClient.getProcessClient()
+            .findProcessInstances(containerId, 0, Integer.MAX_VALUE);
+        List<Long> processInstanceIdsToAbort = new ArrayList<>();
+        int chunkSize = 100;
+        for (int i = 0; i < processInstances.size(); i++) {
+          if (i == chunkSize) {
+            retry = true;
+            break;
           }
+          processInstanceIdsToAbort.add(processInstances.get(i).getId());
+        }
 
-          if (processInstanceIds.size() > 0) {
+        if (processInstanceIdsToAbort.size() > 0) {
+          if (!cancelAllRunningInstances) {
+            LOGGER.error("Error disposing KIE Container {}. It contains active process instances", containerId);
+            return result;
+          }else {
             try {
-              kieClient.getProcessClient().abortProcessInstances(containerId, processInstanceIds);
-              LOGGER.info("{} Process Instances aborted", processInstanceIds.size());
+              kieClient.getProcessClient().abortProcessInstances(containerId, processInstanceIdsToAbort);
+              LOGGER.info("{} Process Instances aborted", processInstanceIdsToAbort.size());
             } catch (KieServicesHttpException e) {
               // this case happens when a subprocess instance was already canceled by the related parent instance
               if (e.getResponseBody().contains("Could not find process instance with id")) {
-                LOGGER.warn("Failure while aborting {} Process Instances: {}", processInstanceIds.size(),
+                LOGGER.warn("Error while aborting {} Process Instances. Message: {}", processInstanceIdsToAbort.size(),
                     e.getResponseBody());
                 retry = true;
               } else {
@@ -319,31 +392,26 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
               }
             }
           }
-        } while (retry);
-      }
+        }
+      } while (retry);
 
       ServiceResponse<Void> responseDispose = kieClient.getKieServicesClient().disposeContainer(containerId);
       if (responseDispose.getType() == ResponseType.FAILURE) {
-        LOGGER.error("Error disposing {}. Message: {}", containerId, responseDispose.getMsg());
+        LOGGER.error("Error disposing KIE Container {}. Message: {}", containerId, responseDispose.getMsg());
       } else {
         LOGGER.warn(
             "Removing of deployed jars from the kie server and kie workbench internal maven repository isn't supported. "
-                + "Please take care when you re-deploying jars with the same name");
-        LOGGER.info("Container disposed: {}", containerId);
+                + "Please take care when you re-deploying jars with the same name.");
+        LOGGER.info("KIE Container disposed: {}", containerId);
         result = true;
       }
     } else {
-      LOGGER.info("Container {} does not exist", containerId);
+      LOGGER.info("KIE Container {} does not exist.", containerId);
       result = true;
     }
 
     LOGGER.info("Undeployment complete");
     return result;
-  }
-
-  @Override
-  public boolean undeploy(boolean cancelAllRunningInstances) {
-    return undeploy(release.getContainerId(), cancelAllRunningInstances);
   }
 
 }

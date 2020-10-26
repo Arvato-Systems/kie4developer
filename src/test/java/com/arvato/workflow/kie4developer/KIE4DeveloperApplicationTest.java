@@ -32,18 +32,13 @@ public class KIE4DeveloperApplicationTest {
   private KieClient kieClient;
   // kie workbench connection
   @Value("${kieworkbench.protocol}")
-  String kieWorkbenchProtocol;
+  private String kieWorkbenchProtocol;
   @Value("${kieworkbench.host}")
-  String kieWorkbenchHost;
+  private String kieWorkbenchHost;
   @Value("${kieworkbench.port}")
-  String kieWorkbenchPort;
+  private String kieWorkbenchPort;
   @Value("${kieworkbench.context}")
-  String kieWorkbenchContext;
-
-  static {
-    // change the optimizer to not generate negative IDs for entities on unittests
-    System.setProperty("hibernate.id.optimizer.pooled.preferred", "pooled-lo");
-  }
+  private String kieWorkbenchContext;
 
   @Test
   public void testStartupOfIntegratedKIEServer() {

@@ -1,6 +1,7 @@
 package com.arvato.workflow.kie4developer.common.impl;
 
 import com.arvato.workflow.kie4developer.common.interfaces.IRelease;
+import org.apache.maven.model.Model;
 import org.kie.api.KieServices;
 import org.kie.server.api.model.ReleaseId;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,18 +10,24 @@ import org.springframework.stereotype.Component;
 @Component
 public class Release implements IRelease {
 
-  @Value("${spring.application.groupid}")
   private String groupId;
-  @Value("${spring.application.name}")
   private String artifactId;
-  @Value("${spring.application.version}")
   private String version;
-  @Value("${spring.application.project.name}")
   private String projectName;
-  @Value("${spring.application.project.description}")
   private String projectDescription;
-  @Value("${spring.application.deploymentTargetBICCW}")
   private Boolean deploymentTargetBICCW;
+
+  public Release(
+      EffectivePomReader effectivePomReader,
+      @Value("${spring.application.deploymentTargetBICCW}") Boolean deploymentTargetBICCW) {
+    Model pom = effectivePomReader.getPomModel();
+    this.groupId = pom.getGroupId();
+    this.artifactId = pom.getArtifactId();
+    this.version = pom.getVersion();
+    this.projectName = pom.getName() == null ? pom.getArtifactId() : pom.getName();
+    this.projectDescription = pom.getDescription();
+    this.deploymentTargetBICCW = deploymentTargetBICCW;
+  }
 
   @Override
   public String getGroupId() {

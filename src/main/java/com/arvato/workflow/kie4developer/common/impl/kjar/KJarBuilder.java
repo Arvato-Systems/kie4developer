@@ -1,5 +1,6 @@
 package com.arvato.workflow.kie4developer.common.impl.kjar;
 
+import com.arvato.workflow.kie4developer.common.impl.FileSystemUtils;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableBPMNProcess;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableDependency;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableWorkItemHandler;
@@ -8,7 +9,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URLDecoder;
@@ -21,16 +21,11 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import org.drools.compiler.kie.builder.impl.InternalKieModule;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieBuilder;
@@ -40,25 +35,23 @@ import org.kie.api.io.Resource;
 import org.kie.internal.io.ResourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
  * Helper to create Kjar alias KModule for a release
  *
  * @author TRIBE01
- * @see {https://github.com/kiegroup/jbpm/blob/7.15.0.Final/jbpm-runtime-manager/src/test/java/org/jbpm/runtime/manager/impl/deploy/AbstractDeploymentDescriptorTest.java}
  */
 @Component
 public class KJarBuilder {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(KJarBuilder.class);
-  @Value("${maven.repository}")
-  private String mavenRepoPath;
   private IRelease release;
+  private FileSystemUtils fileSystemUtils;
 
-  public KJarBuilder(IRelease release) {
+  public KJarBuilder(IRelease release, FileSystemUtils fileSystemUtils) {
     this.release = release;
+    this.fileSystemUtils = fileSystemUtils;
   }
 
   /**
@@ -71,7 +64,7 @@ public class KJarBuilder {
    * @return the kjar file
    * @throws Exception if compilation fails or I/O error occurs
    */
-  public Map<String, File> buildKjar(List<Class<? extends IDeployableDependency>> deployableDependencies,
+  public Map<String, File> buildKjar(List<IDeployableDependency> deployableDependencies,
       List<Class<? extends IDeployableBPMNProcess>> deployableProcesses,
       List<Class<? extends IDeployableWorkItemHandler>> deployableWorkitemhandlers,
       List<Class> deployableServiceclasses) throws Exception {
@@ -88,8 +81,8 @@ public class KJarBuilder {
     for (Class serviceClass : deployableServiceclasses) {
       addClassFileToDeployment(serviceClass, classFilesToDeploy);
     }
-    for (Class<? extends IDeployableDependency> dependencyClass : deployableDependencies) {
-      addClassFilesToDeployment(dependencyClass, classFilesToDeploy);
+    for (IDeployableDependency dependency : deployableDependencies) {
+      addClassFilesToDeployment(dependency, classFilesToDeploy);
     }
 
     // generate xml-files
@@ -116,7 +109,7 @@ public class KJarBuilder {
     resources.add(ResourceFactory.newByteArrayResource(pomProperties.getBytes()).setSourcePath(
         "META-INF/maven/" + release.getGroupId() + File.separator + release.getArtifactId() + "/pom.properties"));
     for (Class<? extends IDeployableBPMNProcess> deployableProcess : deployableProcesses) {
-      if (!deployableProcess.isInterface() && !Modifier.isAbstract(deployableProcess.getModifiers())){
+      if (!deployableProcess.isInterface() && !Modifier.isAbstract(deployableProcess.getModifiers())) {
         resources.add(deployableProcess.newInstance().getBPMNModel()); // .bpmn
       }
     }
@@ -127,8 +120,8 @@ public class KJarBuilder {
         resources.add(
             ResourceFactory.newByteArrayResource(Files.readAllBytes(classFileForKJar)).setSourcePath(filepathForKJar));
       } catch (IOException e) {
-        LOGGER.error(String.format("Error on reading workitemhandler class file %s",
-            deployableWorkitemhandlerFileSet.getValue().getAbsolutePath()), e);
+        LOGGER.error("Error on reading workitemhandler class file {}",
+            deployableWorkitemhandlerFileSet.getValue().getAbsolutePath(), e);
       }
     }
 
@@ -178,13 +171,13 @@ public class KJarBuilder {
     Map<String, String> zip_properties = new HashMap<>();
     zip_properties.put("create", "false");
     try (FileSystem zipfs = FileSystems.newFileSystem(URI.create("jar:" + jarFile.toURI()), zip_properties)) {
-      delete(zipfs.getPath("META-INF/maven/org.default"));
-      delete(zipfs.getPath("src"));
+      fileSystemUtils.delete(zipfs.getPath("META-INF/maven/org.default"));
+      fileSystemUtils.delete(zipfs.getPath("src"));
     } catch (IOException e) {
       throw new IOException("Kjar write error", e);
     }
 
-    LOGGER.info("Kjar created: " + jarFile.getAbsolutePath());
+    LOGGER.info("Kjar created: {}", jarFile.getAbsolutePath());
     Map files = new HashMap<>();
     files.put("jar", jarFile);
     files.put("pom", pomFile);
@@ -192,82 +185,14 @@ public class KJarBuilder {
   }
 
   /**
-   * Unzip a zip/jar to a tmp directory
-   *
-   * @param zipFile the jar or zip file to extract
-   * @return the temp directory which contains all extracted folders and files of the archive
-   */
-  private File unzip(File zipFile) throws IOException {
-    Path outputPath = Files.createTempDirectory(UUID.randomUUID().toString());
-    try (ZipFile zf = new ZipFile(zipFile)) {
-      Enumeration<? extends ZipEntry> zipEntries = zf.entries();
-      while (zipEntries.hasMoreElements()) {
-        ZipEntry entry = zipEntries.nextElement();
-        if (entry.isDirectory()) {
-          Path dirToCreate = outputPath.resolve(entry.getName());
-          Files.createDirectories(dirToCreate);
-        } else {
-          Path fileToCreate = outputPath.resolve(entry.getName());
-          fileToCreate.toFile().getParentFile().mkdirs();
-          Files.copy(zf.getInputStream(entry), fileToCreate);
-        }
-      }
-    } catch (IOException e) {
-      throw e;
-    }
-    return outputPath.toFile();
-  }
-
-  /**
-   * Delete all files within and the directory itself
-   *
-   * @param path filesystem path to delete
-   * @throws IOException on any I/O error
-   */
-  private void delete(Path path) throws IOException {
-    if (path == null || !Files.exists(path)) {
-      return;
-    }
-    if (Files.isDirectory(path)) {
-      Stream<Path> children = Files.list(path);
-      children.forEach(child -> {
-        try {
-          delete(child);
-        } catch (IOException e) {
-          LOGGER.error("Error while deleting file {}", child, e);
-        }
-      });
-    }
-    Files.delete(path);
-  }
-
-  /**
    * Add all class-files of the @link{IDeployableDependency} to the list of class files
    *
-   * @param dependencyClass    the dependency definition
+   * @param dependency         the dependency definition
    * @param classFilesToDeploy the list of class files to extend
    */
-  private void addClassFilesToDeployment(Class<? extends IDeployableDependency> dependencyClass,
-      Map<String, File> classFilesToDeploy)
-      throws IllegalAccessException, InstantiationException, IOException {
-    IDeployableDependency instance = dependencyClass.newInstance();
-    String groupId = instance.getMavenGroupId();
-    String artifactId = instance.getMavenArtifactId();
-    String versionId = instance.getMavenVersionId();
-
-    File jarFile = getJarFile(dependencyClass);
-    if (jarFile == null) {
-      // running via IDE... fetch dependencies from maven repo
-      jarFile = new File(mavenRepoPath + File.separator +
-          groupId.replace(".", File.separator) + File.separator
-          + artifactId + File.separator + versionId + File.separator + artifactId + "-" + versionId + ".jar");
-    } else {
-      // running as fat jar... fetch dependencies from fat jar
-      File unzippedJar = unzip(jarFile);
-      jarFile = new File(unzippedJar, File.separator + "BOOT-INF" + File.separator + "lib" + File.separator +
-          artifactId + "-" + versionId + ".jar");
-    }
-    File unzippedJar = unzip(jarFile);
+  private void addClassFilesToDeployment(IDeployableDependency dependency, Map<String, File> classFilesToDeploy)
+      throws IOException {
+    File unzippedJar = fileSystemUtils.getUnzippedMavenDependencyJarFile(dependency);
 
     List<Path> allClassFilesFromJar = Files.walk(unzippedJar.toPath())
         .filter(path -> path.toFile().isFile())
@@ -277,30 +202,6 @@ public class KJarBuilder {
     for (Path classFile : allClassFilesFromJar) {
       addClassFileToDeployment(classFile, classFilesToDeploy);
     }
-  }
-
-  /**
-   * Get the fat-jar as file
-   *
-   * @param clazz the class reference that is inside the fat-jar
-   * @return the fat-jar file or null
-   */
-  private File getJarFile(Class clazz) {
-    String compiledClassesDir = clazz.getProtectionDomain().getCodeSource().getLocation().getFile();
-    if (!compiledClassesDir.contains(".jar")) {
-      return null;
-    }
-    compiledClassesDir = compiledClassesDir.startsWith("file:") ? compiledClassesDir.substring(5) : compiledClassesDir;
-    compiledClassesDir =
-        compiledClassesDir.contains("!") ? compiledClassesDir.substring(0, compiledClassesDir.indexOf("!"))
-            : compiledClassesDir;
-    try {
-      compiledClassesDir = URLDecoder.decode(compiledClassesDir, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      LOGGER.error("Error while decoding dir: " + compiledClassesDir, e);
-      return null;
-    }
-    return new File(compiledClassesDir);
   }
 
   /**
@@ -317,28 +218,15 @@ public class KJarBuilder {
   }
 
   /**
-   * Get the relativized filepath for a class-file
-   *
-   * @param clazz         the class
-   * @param classfilePath the fullpath which should be relativized
-   * @return the relativized filepath of the class-file
-   */
-  private Path extractRelativePathForClass(Class clazz, Path classfilePath) {
-    int dotsInPackageName = (int) clazz.getPackage().getName().chars().filter(ch -> ch == '.').count();
-    return classfilePath.subpath(classfilePath.getNameCount() - dotsInPackageName - 2, classfilePath.getNameCount());
-  }
-
-  /**
    * Get the class-file - extract when without jar
    *
    * @param classfilePath the path to the class-file (could be in a jar-file)
    * @return the (extracted) class-file
-   * @throws IOException on any I/O Exception
    */
-  private Path extractFileWhenIncludedInJar(Path classfilePath) throws IOException {
+  private Path extractFileWhenIncludedInJar(Path classfilePath) {
     while (classfilePath.toAbsolutePath().toString().contains(".jar")) {  // extract from jar if class is packed
       File jarFile = new File(classfilePath.toString().split(".jar")[0] + ".jar");
-      File unzippedJarFile = unzip(jarFile);
+      File unzippedJarFile = fileSystemUtils.unzip(jarFile);
       String seperator = classfilePath.toString().contains(".jar!") ? ".jar!" : ".jar";
       String afterJar = classfilePath.toString()
           .substring(classfilePath.toString().indexOf(seperator) + seperator.length());
@@ -373,6 +261,18 @@ public class KJarBuilder {
         classFilesToDeploy.put(relativeFilepathOfClass.toString(), classFile.toFile());
       }
     }
+  }
+
+  /**
+   * Get the relativized filepath for a class-file
+   *
+   * @param clazz         the class
+   * @param classfilePath the fullpath which should be relativized
+   * @return the relativized filepath of the class-file
+   */
+  private Path extractRelativePathForClass(Class clazz, Path classfilePath) {
+    int dotsInPackageName = (int) clazz.getPackage().getName().chars().filter(ch -> ch == '.').count();
+    return classfilePath.subpath(classfilePath.getNameCount() - dotsInPackageName - 2, classfilePath.getNameCount());
   }
 
   /**
@@ -447,7 +347,7 @@ public class KJarBuilder {
    * @return the kie-deployment-descriptor.xml file content
    */
   private String buildDeploymentDescriptor(List<Class<? extends IDeployableWorkItemHandler>> deployableWorkitemhandlers,
-      boolean includeBICCWListeners) throws IllegalAccessException, InstantiationException {
+      boolean includeBICCWListeners) {
     String deplomentDescriptorXml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
         + "<deployment-descriptor xsi:schemaLocation=\"http://www.jboss.org/jbpm deployment-descriptor.xsd\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
         + "    <persistence-unit>org.jbpm.domain</persistence-unit>\n"
@@ -516,7 +416,7 @@ public class KJarBuilder {
    *
    * @return the pom.xml file content
    */
-  private String buildPomXml() throws Exception {
+  private String buildPomXml() {
     String pomXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         + "<project xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\" xmlns=\"http://maven.apache.org/POM/4.0.0\"\n"
         + "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"

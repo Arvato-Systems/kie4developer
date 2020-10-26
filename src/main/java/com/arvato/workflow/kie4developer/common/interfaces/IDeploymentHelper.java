@@ -28,7 +28,7 @@ public interface IDeploymentHelper {
 	 *
 	 * @param dependenciesToDeploy maven dependencies to deploy
 	 */
-	void setDependenciesToDeploy(List<Class<? extends IDeployableDependency>> dependenciesToDeploy);
+	void setDependenciesToDeploy(List<IDeployableDependency> dependenciesToDeploy);
 
 	/**
 	 * Define the Process(es) you want to deploy on the Server

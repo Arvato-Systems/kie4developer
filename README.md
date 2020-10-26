@@ -13,8 +13,7 @@ How to configure it[](how-to-configure-it)
 
 Complete configuration via [application.properties](src/main/resources/application.properties) of the projects.
 
-You can either use the included KIE Server as deploy target and runtime (default) or 
-connect to a remote KIE Server via following properties:
+You can either use the included KIE Server as deploy target and runtime (default) or connect to a remote KIE Server via following properties:
 ```
 kieserver.protocol=http
 kieserver.host=localhost
@@ -23,8 +22,7 @@ kieserver.user=kieserver
 kieserver.pwd=kieserver1!
 ```
 
-When connect to a remote KIE Server you need a remote KIE Workbench (alias Business Central) as well which can be 
-connected via following properties:
+When connect to a remote KIE Server you need a remote KIE Workbench (alias Business Central) as well which can be connected via following properties:
 ```
 kieworkbench.protocol=http
 kieworkbench.host=localhost
@@ -37,10 +35,11 @@ kieworkbench.pwd=admin
 How to build it
 ------------------------------
 
-To create your Spring Boot fat jar just run `mvn:package`. Use `mvn:package deploy` for uploading your artifact to the repository server.
 Ensure that the default installed java version in the environment is JDK 8.
 
-To start the Application direct on the target-System just run `java -jar workflow-processes-example-7.23.0.Final-SNAPSHOT.jar`.
+To create your Spring Boot fat jar just run `mvn:package`. Use `mvn:package deploy` for uploading your artifact to the repository server.
+
+To start the application direct on the target-system just run `java -jar workflow-processes-example-7.23.0.Final-SNAPSHOT.jar`.
 
 How to run it
 ------------------------------
@@ -53,7 +52,7 @@ You can run the application by simply starting
 mvn clean spring-boot:run
 ```
 
-If you like to use the KIE Server REST API:
+If you like to use the KIE Server REST API (hint: the main method contains a shutdown that you may want to remove):
 
 ```
 # URL & Credentails (start-up takes some time...):
@@ -82,19 +81,11 @@ docker run -p 8180:8080 -d --env "JAVA_OPTS=-Xms256m -Xmx1024m -Djava.net.prefer
 How to implement your own workflow solution
 ------------------------------
 
-Configure your project settings within [application.properties](src/main/resources/application.properties).
-
-```
-spring.application.groupid=com.example
-spring.application.groupid.serialization=${spring.application.groupid}
-spring.application.name=myproject
-spring.application.version=1.0.0-SNAPSHOT
-spring.application.project.name=My Project
-spring.application.project.description=My first Workflow Project
-```
+All general projects settings are taken from the maven [pom.xml](pom.xml) file.
+Advanced configuration of your project is done within [application.properties](src/main/resources/application.properties) file.
 
 Add BPMN Process Model classes by implementing the ```IDeployableBPMNProcess``` Interface. Store them in the package ```com.example.workflow.processes```.
-Add required dependencies by add them into  ```pom.xml``` and implementing the ```IDeployableDependency``` Interface. Store them in the package ```com.example.workflow.dependencies```.
+Add required dependencies by add them into  ```pom.xml```.
 Create Service classes that runs your business logic by providing the default constructur and store them in the package ```com.example.workflow.services```.
 If you use custom classes within your process models make sure these implements ```Serializable``` for marshalling support.
 Add own WorkItemHandler by implementing the ```IDeployableWorkItemHandler``` Interface. Store them in the package ```com.example.workflow.workitemhandler```.

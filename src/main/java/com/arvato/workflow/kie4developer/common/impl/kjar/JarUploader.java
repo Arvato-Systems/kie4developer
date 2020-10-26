@@ -25,10 +25,13 @@ import org.springframework.web.client.RestTemplate;
 public class JarUploader {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JarUploader.class);
-  @Value("${kieworkbench.user}")
   private String workbenchUser;
-  @Value("${kieworkbench.pwd}")
   private String workbenchPassword;
+
+  public JarUploader(@Value("${kieworkbench.user}") String workbenchUser, @Value("${kieworkbench.pwd}") String workbenchPassword) {
+    this.workbenchUser = workbenchUser;
+    this.workbenchPassword = workbenchPassword;
+  }
 
   /**
    * Upload a single file into the kie-workbench by using Basic Auth

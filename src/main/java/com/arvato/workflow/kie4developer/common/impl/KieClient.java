@@ -18,7 +18,6 @@ import org.kie.server.client.admin.UserTaskAdminServicesClient;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
@@ -34,26 +33,32 @@ public class KieClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(KieClient.class);
   private KieServicesConfiguration configuration;
   private KieServicesClient kieServicesClient;
+  private Environment environment;
   // kie server connection parameter
-  @Autowired
-  Environment environment;
-  @Value("${kieserver.location}")
   private String kieServerUrl;
-  @Value("${kieserver.user}")
   private String kieServerUser;
-  @Value("${kieserver.pwd}")
   private String kieServerPwd;
-  @Value("${org.kie.server.timeout}")
   private Long timeout;
-  @Value("${spring.application.groupid.serialization}")
   private String serializationGroupId;
+
+  public KieClient(Environment environment, @Value("${kieserver.location}") String kieServerUrl,
+      @Value("${kieserver.user}") String kieServerUser, @Value("${kieserver.pwd}") String kieServerPwd,
+      @Value("${org.kie.server.timeout}") Long timeout,
+      @Value("${spring.application.groupid.serialization}") String serializationGroupId) {
+    this.environment = environment;
+    this.kieServerUrl = kieServerUrl;
+    this.kieServerUser = kieServerUser;
+    this.kieServerPwd = kieServerPwd;
+    this.timeout = timeout;
+    this.serializationGroupId = serializationGroupId;
+  }
 
   public KieServicesClient getKieServicesClient() {
     if (kieServicesClient == null) {
       LOGGER.info("Connecting to KIE-Server...");
-      if (kieServerUrl.contains(":0")){
+      if (kieServerUrl.contains(":0")) {
         String rndPort = environment.getProperty("local.server.port");
-        kieServerUrl = kieServerUrl.replace(":0", ":"+rndPort);
+        kieServerUrl = kieServerUrl.replace(":0", ":" + rndPort);
       }
       configuration = KieServicesFactory.newRestConfiguration(kieServerUrl, kieServerUser, kieServerPwd);
       configuration.setTimeout(timeout); // default is 5s
@@ -61,7 +66,7 @@ public class KieClient {
       Set<Class<?>> customJAXBClasses = new HashSet<>();
       Reflections ref = new Reflections(serializationGroupId);
       for (Class<?> cl : ref.getSubTypesOf(Serializable.class)) {
-        if (cl.getName().startsWith(serializationGroupId)){
+        if (cl.getName().startsWith(serializationGroupId)) {
           customJAXBClasses.add(cl);
         }
       }
