@@ -7,6 +7,7 @@ import com.arvato.workflow.kie4developer.common.interfaces.IDeployableDependency
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableWorkItemHandler;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeploymentHelper;
 import com.arvato.workflow.kie4developer.common.interfaces.IRelease;
+import com.arvato.workflow.kie4developer.workitemhandler.JavaWorkItemHandler;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -96,6 +97,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     this.workItemHandlersToDeploy = new ArrayList<>(
         new Reflections(this.release.getGroupId() + ".workitemhandler")
             .getSubTypesOf(IDeployableWorkItemHandler.class));
+    this.workItemHandlersToDeploy.add(JavaWorkItemHandler.class);
     this.dependenciesToDeploy = getDependencies();
 
     System.setProperty("kieserver.location", this.kieServerUrl); // required for JavaWorkItemHandler
