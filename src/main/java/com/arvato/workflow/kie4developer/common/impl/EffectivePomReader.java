@@ -1,10 +1,18 @@
 package com.arvato.workflow.kie4developer.common.impl;
 
+import com.google.common.collect.Lists;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.stream.Collectors;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.building.DefaultModelBuilder;
 import org.apache.maven.model.building.DefaultModelBuilderFactory;
@@ -14,20 +22,32 @@ import org.apache.maven.model.resolution.ModelResolver;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.project.ProjectModelResolver;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.apache.maven.settings.Repository;
+import org.apache.maven.settings.Server;
+import org.apache.maven.settings.Settings;
+import org.apache.maven.settings.crypto.SettingsDecryptionResult;
+import org.apache.maven.settings.io.DefaultSettingsReader;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RequestTrace;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.impl.RemoteRepositoryManager;
+import org.eclipse.aether.internal.impl.DefaultRemoteRepositoryManager;
 import org.eclipse.aether.internal.impl.DefaultRepositorySystem;
+import org.eclipse.aether.repository.Authentication;
+import org.eclipse.aether.repository.AuthenticationSelector;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.RemoteRepository.Builder;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.transport.wagon.WagonTransporterFactory;
+import org.eclipse.aether.util.repository.AuthenticationBuilder;
+import org.eclipse.aether.util.repository.ConservativeAuthenticationSelector;
+import org.eclipse.aether.util.repository.DefaultAuthenticationSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -80,15 +100,40 @@ public class EffectivePomReader {
       session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
 
       RequestTrace requestTrace = new RequestTrace(null);
-      RemoteRepositoryManager
-          remoteRepositoryManager =
-          locator.getService(RemoteRepositoryManager.class);
-      List<RemoteRepository> repos = Arrays
-          .asList(new RemoteRepository.Builder("central", "default", "https://repo.maven.apache.org/maven2/").build());
+      RemoteRepositoryManager remoteRepositoryManager = locator.getService(RemoteRepositoryManager.class);
+      List<RemoteRepository> repos = new ArrayList<>();
+
+      // load profile from settings.xml
+      File mavenSettingsFile = mavenRepository.getParent().resolve("settings.xml").toFile();
+      if (mavenSettingsFile.exists()){
+        Settings settings = new DefaultSettingsReader().read( mavenSettingsFile, Collections.emptyMap() );
+        List<Repository> profileRepositories = settings.getProfilesAsMap().get(settings.getActiveProfiles().get(0)).getRepositories();
+
+        repos = profileRepositories.stream()
+            .map( profileRepository -> {
+              Builder builder = new RemoteRepository.Builder(profileRepository.getId(), "default", profileRepository.getUrl());
+              Optional<Server> profileServer = settings.getServers().stream().filter(s -> s.getId().equalsIgnoreCase(profileRepository.getId())).findFirst();
+              if (profileServer.isPresent()){
+                Authentication auth = new AuthenticationBuilder().addUsername(profileServer.get().getUsername()).addPassword(profileServer.get().getPassword()).build();
+                builder.setAuthentication(auth);
+              }
+              return builder.build();
+            })
+            .collect(Collectors.toList());
+      }else{
+        LOGGER.warn("No maven settings.xml file found in path {}", mavenRepository.getParent());
+        //TODO: remove this RDU specific workaround
+        repos.add(
+            new RemoteRepository.Builder("nexus-snapshots", "default", "https://nexus.bfs-finance.de/repository/maven-public/")
+            .setAuthentication(new AuthenticationBuilder().addUsername("jenkins").addPassword("123456").build())
+            .build());
+      }
+
+      // add the default remote repository
+      repos.add(new RemoteRepository.Builder("central", "default", "https://repo.maven.apache.org/maven2/").build());
 
       DefaultRepositorySystem repositorySystem = new DefaultRepositorySystem();
       repositorySystem.initService(locator);
-
       ModelResolver modelResolver =
           new ProjectModelResolver(session, requestTrace,
               repositorySystem, remoteRepositoryManager, repos,
@@ -99,13 +144,26 @@ public class EffectivePomReader {
       modelBuildingRequest.setPomFile(pomFile);
       modelBuildingRequest.setModelResolver(modelResolver);
       modelBuildingRequest.setSystemProperties(System.getProperties());
+
       DefaultModelBuilder modelBuilder = new DefaultModelBuilderFactory().newInstance();
 
       cachedModel = modelBuilder.build(modelBuildingRequest).getEffectiveModel();
-    } catch (ModelBuildingException e) {
+    } catch (ModelBuildingException | IOException e) {
       LOGGER.error("Error while resolving pom.xml", e);
     }
     return cachedModel;
   }
+
+  private AuthenticationSelector createAuthenticationSelector(SettingsDecryptionResult decryptedSettings) {
+    DefaultAuthenticationSelector selector = new DefaultAuthenticationSelector();
+    for (Server server : decryptedSettings.getServers()) {
+      AuthenticationBuilder auth = new AuthenticationBuilder();
+      auth.addUsername(server.getUsername()).addPassword(server.getPassword());
+      auth.addPrivateKey(server.getPrivateKey(), server.getPassphrase());
+      selector.add(server.getId(), auth.build());
+    }
+    return new ConservativeAuthenticationSelector(selector);
+  }
+
 
 }
