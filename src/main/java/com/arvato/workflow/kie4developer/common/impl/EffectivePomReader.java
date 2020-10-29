@@ -61,15 +61,13 @@ public class EffectivePomReader {
     if (cachedModel != null) {
       return cachedModel;
     }
-    Path pomFilePath;
+    File pomFile;
     if (fileSystemUtils.runAsFatJar()) {
-      pomFilePath = Paths.get("META-INF", "maven").toFile().listFiles()[0].listFiles()[0].toPath().resolve("pom.xml");
+      pomFile = fileSystemUtils.getFile( Paths.get("META-INF", "maven")).listFiles()[0].listFiles()[0].toPath().resolve("pom.xml").toFile();
     } else {
-      pomFilePath = Paths.get("pom.xml");
+      pomFile = fileSystemUtils.getFile( Paths.get("pom.xml"));
     }
     try {
-      File pomFile = fileSystemUtils.getFile(pomFilePath);
-
       DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
       locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
       locator.addService(TransporterFactory.class, FileTransporterFactory.class);
