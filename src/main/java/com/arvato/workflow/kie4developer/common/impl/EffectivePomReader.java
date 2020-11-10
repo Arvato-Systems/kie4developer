@@ -1,17 +1,13 @@
 package com.arvato.workflow.kie4developer.common.impl;
 
-import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.stream.Collectors;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.building.DefaultModelBuilder;
@@ -22,6 +18,7 @@ import org.apache.maven.model.resolution.ModelResolver;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.project.ProjectModelResolver;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.apache.maven.settings.Profile;
 import org.apache.maven.settings.Repository;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
@@ -33,7 +30,6 @@ import org.eclipse.aether.RequestTrace;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.impl.RemoteRepositoryManager;
-import org.eclipse.aether.internal.impl.DefaultRemoteRepositoryManager;
 import org.eclipse.aether.internal.impl.DefaultRepositorySystem;
 import org.eclipse.aether.repository.Authentication;
 import org.eclipse.aether.repository.AuthenticationSelector;
@@ -67,7 +63,8 @@ public class EffectivePomReader {
   private Path mavenSettings;
   private Model cachedModel;
 
-  public EffectivePomReader(FileSystemUtils fileSystemUtils, @Value("${maven.repository}") String mavenRepository, @Value("${maven.settings}") String mavenSettings) {
+  public EffectivePomReader(FileSystemUtils fileSystemUtils, @Value("${maven.repository}") String mavenRepository,
+      @Value("${maven.settings}") String mavenSettings) {
     this.fileSystemUtils = fileSystemUtils;
     this.mavenRepository = Paths.get(mavenRepository);
     this.mavenSettings = Paths.get(mavenSettings);
@@ -85,9 +82,10 @@ public class EffectivePomReader {
     }
     File pomFile;
     if (fileSystemUtils.runAsFatJar()) {
-      pomFile = fileSystemUtils.getFile( Paths.get("META-INF", "maven")).listFiles()[0].listFiles()[0].toPath().resolve("pom.xml").toFile();
+      pomFile = fileSystemUtils.getFile(Paths.get("META-INF", "maven")).listFiles()[0].listFiles()[0].toPath()
+          .resolve("pom.xml").toFile();
     } else {
-      pomFile = fileSystemUtils.getFile( Paths.get("pom.xml"));
+      pomFile = fileSystemUtils.getFile(Paths.get("pom.xml"));
     }
     try {
       DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
@@ -107,22 +105,37 @@ public class EffectivePomReader {
 
       // load profile from settings.xml
       File mavenSettingsFile = mavenSettings.toFile();
-      if (mavenSettingsFile.exists()){
-        Settings settings = new DefaultSettingsReader().read( mavenSettingsFile, Collections.emptyMap() );
-        List<Repository> profileRepositories = settings.getProfilesAsMap().get(settings.getActiveProfiles().get(0)).getRepositories();
+      if (mavenSettingsFile.exists()) {
+        Settings settings = new DefaultSettingsReader().read(mavenSettingsFile, Collections.emptyMap());
+        String activeProfile = null;
+        if (settings.getActiveProfiles().isEmpty()) {
+          for (Profile profile : settings.getProfiles()) {
+            if (profile.getActivation().isActiveByDefault()) {
+              activeProfile = profile.getId();
+            }
+          }
+        } else {
+          activeProfile = settings.getActiveProfiles().get(0);
+        }
 
-        repos = profileRepositories.stream()
-            .map( profileRepository -> {
-              Builder builder = new RemoteRepository.Builder(profileRepository.getId(), "default", profileRepository.getUrl());
-              Optional<Server> profileServer = settings.getServers().stream().filter(s -> s.getId().equalsIgnoreCase(profileRepository.getId())).findFirst();
-              if (profileServer.isPresent()){
-                Authentication auth = new AuthenticationBuilder().addUsername(profileServer.get().getUsername()).addPassword(profileServer.get().getPassword()).build();
-                builder.setAuthentication(auth);
-              }
-              return builder.build();
-            })
-            .collect(Collectors.toList());
-      }else{
+        if (activeProfile != null) {
+          List<Repository> profileRepositories = settings.getProfilesAsMap().get(activeProfile).getRepositories();
+          repos = profileRepositories.stream()
+              .map(profileRepository -> {
+                Builder builder = new RemoteRepository.Builder(profileRepository.getId(), "default",
+                    profileRepository.getUrl());
+                Optional<Server> profileServer = settings.getServers().stream()
+                    .filter(s -> s.getId().equalsIgnoreCase(profileRepository.getId())).findFirst();
+                if (profileServer.isPresent()) {
+                  Authentication auth = new AuthenticationBuilder().addUsername(profileServer.get().getUsername())
+                      .addPassword(profileServer.get().getPassword()).build();
+                  builder.setAuthentication(auth);
+                }
+                return builder.build();
+              })
+              .collect(Collectors.toList());
+        }
+      } else {
         LOGGER.warn("Maven settings.xml file not found");
       }
 
