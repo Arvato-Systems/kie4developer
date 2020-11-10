@@ -70,11 +70,7 @@ public class EffectivePomReader {
   public EffectivePomReader(FileSystemUtils fileSystemUtils, @Value("${maven.repository}") String mavenRepository, @Value("${maven.settings}") String mavenSettings) {
     this.fileSystemUtils = fileSystemUtils;
     this.mavenRepository = Paths.get(mavenRepository);
-    if (mavenSettings != null){
-      this.mavenSettings = Paths.get(mavenSettings);
-    }else{
-      this.mavenSettings = null;
-    }
+    this.mavenSettings = Paths.get(mavenSettings);
     this.cachedModel = null;
   }
 
@@ -110,13 +106,7 @@ public class EffectivePomReader {
       List<RemoteRepository> repos = new ArrayList<>();
 
       // load profile from settings.xml
-      File mavenSettingsFile = mavenRepository.getParent().resolve("settings.xml").toFile();
-      if (!mavenSettingsFile.exists()) {
-        if (mavenSettings != null) {
-          mavenSettingsFile = mavenSettings.toFile();
-        }
-      }
-
+      File mavenSettingsFile = mavenSettings.toFile();
       if (mavenSettingsFile.exists()){
         Settings settings = new DefaultSettingsReader().read( mavenSettingsFile, Collections.emptyMap() );
         List<Repository> profileRepositories = settings.getProfilesAsMap().get(settings.getActiveProfiles().get(0)).getRepositories();
@@ -171,6 +161,5 @@ public class EffectivePomReader {
     }
     return new ConservativeAuthenticationSelector(selector);
   }
-
 
 }
