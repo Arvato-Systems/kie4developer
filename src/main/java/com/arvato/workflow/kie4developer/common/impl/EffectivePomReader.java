@@ -64,11 +64,17 @@ public class EffectivePomReader {
   private static final Logger LOGGER = LoggerFactory.getLogger(EffectivePomReader.class);
   private FileSystemUtils fileSystemUtils;
   private Path mavenRepository;
+  private Path mavenSettings;
   private Model cachedModel;
 
-  public EffectivePomReader(FileSystemUtils fileSystemUtils, @Value("${maven.repository}") String mavenRepository) {
+  public EffectivePomReader(FileSystemUtils fileSystemUtils, @Value("${maven.repository}") String mavenRepository, @Value("${maven.settings}") String mavenSettings) {
     this.fileSystemUtils = fileSystemUtils;
     this.mavenRepository = Paths.get(mavenRepository);
+    if (mavenSettings != null){
+      this.mavenSettings = Paths.get(mavenSettings);
+    }else{
+      this.mavenSettings = null;
+    }
     this.cachedModel = null;
   }
 
@@ -105,6 +111,12 @@ public class EffectivePomReader {
 
       // load profile from settings.xml
       File mavenSettingsFile = mavenRepository.getParent().resolve("settings.xml").toFile();
+      if (!mavenSettingsFile.exists()) {
+        if (mavenSettings != null) {
+          mavenSettingsFile = mavenSettings.toFile();
+        }
+      }
+
       if (mavenSettingsFile.exists()){
         Settings settings = new DefaultSettingsReader().read( mavenSettingsFile, Collections.emptyMap() );
         List<Repository> profileRepositories = settings.getProfilesAsMap().get(settings.getActiveProfiles().get(0)).getRepositories();
@@ -121,12 +133,7 @@ public class EffectivePomReader {
             })
             .collect(Collectors.toList());
       }else{
-        LOGGER.warn("No maven settings.xml file found in path {}", mavenRepository.getParent());
-        //TODO: remove this RDU specific workaround
-        repos.add(
-            new RemoteRepository.Builder("nexus-snapshots", "default", "https://nexus.bfs-finance.de/repository/maven-public/")
-            .setAuthentication(new AuthenticationBuilder().addUsername("jenkins").addPassword("123456").build())
-            .build());
+        LOGGER.warn("Maven settings.xml file not found");
       }
 
       // add the default remote repository

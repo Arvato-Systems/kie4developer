@@ -122,7 +122,7 @@ public class FileSystemUtils {
     try {
       outputPath = Files.createTempDirectory(UUID.randomUUID().toString());
     } catch (IOException e) {
-      e.printStackTrace();
+      LOGGER.error("Error while creating tmp dir for unzipping", e);
     }
     try (ZipFile zf = new ZipFile(zipFile)) {
       Enumeration<? extends ZipEntry> zipEntries = zf.entries();
@@ -134,6 +134,10 @@ public class FileSystemUtils {
         } else {
           Path fileToCreate = outputPath.resolve(entry.getName());
           fileToCreate.toFile().getParentFile().mkdirs();
+          if (fileToCreate.toFile().exists()){
+            LOGGER.warn("File {} already exist.", fileToCreate);
+            fileToCreate.toFile().delete();
+          }
           Files.copy(zf.getInputStream(entry), fileToCreate);
         }
       }

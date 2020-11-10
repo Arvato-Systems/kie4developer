@@ -16,10 +16,17 @@ public class Release implements IRelease {
   private String projectName;
   private String projectDescription;
   private Boolean deploymentTargetBICCW;
+  private Boolean includeProcessInstanceListener;
+  private Boolean includeTaskEmailEventListener;
+  private Boolean includeTaskEventListener;
 
   public Release(
       EffectivePomReader effectivePomReader,
-      @Value("${spring.application.deploymentTargetBICCW}") Boolean deploymentTargetBICCW) {
+      @Value("${spring.application.deploymentTargetBICCW}") Boolean deploymentTargetBICCW,
+      @Value("${spring.application.biccw.include.processinstancelistener}") Boolean includeProcessInstanceListener,
+      @Value("${spring.application.biccw.include.taskemaileventlistener}") Boolean includeTaskEmailEventListener,
+      @Value("${spring.application.biccw.include.taskeventListener}") Boolean includeTaskEventListener
+      ) {
     Model pom = effectivePomReader.getPomModel();
     this.groupId = pom.getGroupId();
     this.artifactId = pom.getArtifactId();
@@ -27,6 +34,9 @@ public class Release implements IRelease {
     this.projectName = pom.getName() == null ? pom.getArtifactId() : pom.getName();
     this.projectDescription = pom.getDescription();
     this.deploymentTargetBICCW = deploymentTargetBICCW;
+    this.includeProcessInstanceListener = includeProcessInstanceListener;
+    this.includeTaskEmailEventListener = includeTaskEmailEventListener;
+    this.includeTaskEventListener = includeTaskEventListener;
   }
 
   @Override
@@ -67,6 +77,21 @@ public class Release implements IRelease {
   @Override
   public boolean isDeploymentTargetBICCW() {
     return deploymentTargetBICCW;
+  }
+
+  @Override
+  public boolean isIncludeProcessInstanceListener() {
+    return includeProcessInstanceListener;
+  }
+
+  @Override
+  public boolean isIncludeTaskEmailEventListener() {
+    return includeTaskEmailEventListener;
+  }
+
+  @Override
+  public boolean isIncludeTaskEventListener() {
+    return includeTaskEventListener;
   }
 
   @Override

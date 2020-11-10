@@ -87,7 +87,7 @@ public class KJarBuilder {
 
     // generate xml-files
     String deploymentDescriptor = buildDeploymentDescriptor(deployableWorkitemhandlers,
-        release.isDeploymentTargetBICCW());
+        release.isDeploymentTargetBICCW(), release.isIncludeProcessInstanceListener(), release.isIncludeTaskEmailEventListener(), release.isIncludeTaskEventListener());
     String kmoduleInfo = buildKmoduleInfo();
     String kmoduleXml = buildKmoduleXml();
     String beansXml = buildBeansXml(deployableWorkitemhandlers);
@@ -344,10 +344,13 @@ public class KJarBuilder {
    *
    * @param deployableWorkitemhandlers the related workitemhandlers
    * @param includeBICCWListeners      flag to indicate if the BICCW listeners has to be included
+   * @param includeProcessinstancelistener flag to indicate if the BICCW ImprovedBicceProcessInstanceListener has to be included
+   * @param includeTaskemaileventlistener flag to indicate if the BICCW BicceTaskEmailEventListener has to be included
+   * @param includeTaskeventListener  flag to indicate if the BICCW ImprovedBicceTaskEventListener has to be included
    * @return the kie-deployment-descriptor.xml file content
    */
   private String buildDeploymentDescriptor(List<Class<? extends IDeployableWorkItemHandler>> deployableWorkitemhandlers,
-      boolean includeBICCWListeners) {
+      boolean includeBICCWListeners, boolean includeProcessinstancelistener, boolean includeTaskemaileventlistener, boolean includeTaskeventListener) {
     String deplomentDescriptorXml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
         + "<deployment-descriptor xsi:schemaLocation=\"http://www.jboss.org/jbpm deployment-descriptor.xsd\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
         + "    <persistence-unit>org.jbpm.domain</persistence-unit>\n"
@@ -357,25 +360,31 @@ public class KJarBuilder {
         + "    <runtime-strategy>PER_PROCESS_INSTANCE</runtime-strategy>\n"
         + "    <marshalling-strategies/>\n";
     if (includeBICCWListeners) {
-      deplomentDescriptorXml += "    <event-listeners>\n"
-          + "     <event-listener>\n"
-          + "            <resolver>reflection</resolver>\n"
-          + "            <identifier>com.arvato.bicce.listener.ImprovedBicceProcessInstanceListener</identifier>\n"
-          + "            <parameters/>\n"
-          + "     </event-listener>\n"
-          + "    </event-listeners>\n"
-          + "    <task-event-listeners>\n"
-          + "        <task-event-listener>\n"
-          + "            <resolver>reflection</resolver>\n"
-          + "            <identifier>com.arvato.bicce.email.listener.BicceTaskEmailEventListener</identifier>\n"
-          + "            <parameters/>\n"
-          + "        </task-event-listener>\n"
-          + "        <task-event-listener>\n"
-          + "            <resolver>reflection</resolver>\n"
-          + "            <identifier>com.arvato.bicce.listener.ImprovedBicceTaskEventListener</identifier>\n"
-          + "            <parameters/>\n"
-          + "        </task-event-listener>\n"
-          + "    </task-event-listeners>\n";
+      deplomentDescriptorXml += "    <event-listeners>\n";
+      if (includeProcessinstancelistener){
+        deplomentDescriptorXml +=  "     <event-listener>\n"
+            + "            <resolver>reflection</resolver>\n"
+            + "            <identifier>com.arvato.bicce.listener.ImprovedBicceProcessInstanceListener</identifier>\n"
+            + "            <parameters/>\n"
+            + "     </event-listener>\n";
+      }
+      deplomentDescriptorXml += "    </event-listeners>\n"
+          + "    <task-event-listeners>\n";
+      if (includeTaskemaileventlistener){
+        deplomentDescriptorXml += "        <task-event-listener>\n"
+            + "            <resolver>reflection</resolver>\n"
+            + "            <identifier>com.arvato.bicce.email.listener.BicceTaskEmailEventListener</identifier>\n"
+            + "            <parameters/>\n"
+            + "        </task-event-listener>\n";
+      }
+      if (includeTaskeventListener){
+        deplomentDescriptorXml += "        <task-event-listener>\n"
+            + "            <resolver>reflection</resolver>\n"
+            + "            <identifier>com.arvato.bicce.listener.ImprovedBicceTaskEventListener</identifier>\n"
+            + "            <parameters/>\n"
+            + "        </task-event-listener>\n";
+      }
+      deplomentDescriptorXml +=  "    </task-event-listeners>\n";
     } else {
       deplomentDescriptorXml += "    <event-listeners/>\n"
           + "    <task-event-listeners/>\n";

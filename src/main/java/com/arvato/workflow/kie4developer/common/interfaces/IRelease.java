@@ -66,6 +66,27 @@ public interface IRelease {
   boolean isDeploymentTargetBICCW();
 
   /**
+   * Check if the BICCW specific ImprovedBicceProcessInstanceListener should be included (true) or not (false)
+   *
+   * @return true if ImprovedBicceProcessInstanceListener should be included
+   */
+  boolean isIncludeProcessInstanceListener();
+
+  /**
+   * Check if the BICCW specific BicceTaskEmailEventListener should be included (true) or not (false)
+   *
+   * @return true if BicceTaskEmailEventListener should be included
+   */
+  boolean isIncludeTaskEmailEventListener();
+
+  /**
+   * Check if the BICCW specific ImprovedBicceTaskEventListener should be included (true) or not (false)
+   *
+   * @return true if ImprovedBicceTaskEventListener should be included
+   */
+  boolean isIncludeTaskEventListener();
+
+  /**
    * Get the unique deployment id for the release.
    *
    * @return the deployment id in the form <code>package:name:version</code>
