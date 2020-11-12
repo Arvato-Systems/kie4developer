@@ -73,7 +73,7 @@ public class KIE4DeveloperApplicationTest {
         assertTrue("KIE Workbench website is not available", kieWorkbenchWebsite.getBody().contains("Business Central"));
       } catch (ResourceAccessException e) {
         fail(
-            "Connection to KIE Workbench can't be established. Please start a external workbench: docker run -p 8080:8080 -p 8001:8001 -d --name jbpm-workbench jboss/jbpm-workbench-showcase:7.15.0.Final && docker logs -f jbpm-workbench");
+            "Connection to KIE Workbench can't be established. Please start a external workbench: docker run -p 8080:8080 -p 8001:8001 -d --name jbpm-workbench jboss/jbpm-workbench-showcase:7.23.0.Final && docker logs -f jbpm-workbench");
       }
     }
   }
