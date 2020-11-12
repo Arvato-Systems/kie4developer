@@ -1,6 +1,7 @@
 package com.arvato.workflow.kie4developer.common.impl.kjar;
 
 import com.arvato.workflow.kie4developer.common.impl.FileSystemUtils;
+import com.arvato.workflow.kie4developer.common.impl.ProcessBuilder;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableBPMNProcess;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableDependency;
 import com.arvato.workflow.kie4developer.common.interfaces.IDeployableWorkItemHandler;
@@ -111,7 +112,9 @@ public class KJarBuilder {
         "META-INF/maven/" + release.getGroupId() + File.separator + release.getArtifactId() + "/pom.properties"));
     for (Class<? extends IDeployableBPMNProcess> deployableProcess : deployableProcesses) {
       if (!deployableProcess.isInterface() && !Modifier.isAbstract(deployableProcess.getModifiers())) {
-        resources.add(deployableProcess.newInstance().getBPMNModel()); // .bpmn
+        IDeployableBPMNProcess deployableBPMNProcess = deployableProcess.newInstance();
+        Resource resource = ProcessBuilder.build(deployableBPMNProcess);
+        resources.add(resource); // .bpmn
       }
     }
     for (Entry<String, File> deployableWorkitemhandlerFileSet : classFilesToDeploy.entrySet()) {

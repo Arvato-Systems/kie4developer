@@ -1,5 +1,6 @@
 package com.arvato.workflow.kie4developer.common.interfaces;
 
+import org.jbpm.ruleflow.core.RuleFlowProcessFactory;
 import org.kie.api.io.Resource;
 
 /**
@@ -45,10 +46,17 @@ public interface IDeployableBPMNProcess {
   }
 
   /**
-   * Get the BPMN Process Model that can be used for deployment
+   * Build the BPMN Process Model via fluent API
    *
-   * @return the BPM Process Definition
+   * @param builder the BPM Process builder
    */
-  Resource getBPMNModel();
+  void buildBPMNModel(RuleFlowProcessFactory builder);
+
+  /**
+   * Build the BPMN Process Model via .bpmn file.
+   *
+   * @return the BPMN Process Model as XML File Resource
+   */
+  default Resource buildBPMNModel() { return null; }
 
 }
