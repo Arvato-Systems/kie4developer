@@ -47,6 +47,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private KieClient kieClient;
   private KJarBuilder kJarBuilder;
   private JarUploader jarUploader;
+  private FileSystemUtils fileSystemUtils;
   private List<IDeployableDependency> dependenciesToDeploy;
   private List<Class<? extends IDeployableBPMNProcess>> processesToDeploy;
   private List<Class> serviceClassesToDeploy;
@@ -70,6 +71,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
       KJarBuilder kJarBuilder,
       KieClient kieClient,
       JarUploader jarUploader,
+      FileSystemUtils fileSystemUtils,
       @Value("${kieworkbench.protocol}") String workbenchProtocol,
       @Value("${kieworkbench.host}") String workbenchHost,
       @Value("${kieworkbench.port}") int workbenchPort,
@@ -82,6 +84,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     this.kJarBuilder = kJarBuilder;
     this.kieClient = kieClient;
     this.jarUploader = jarUploader;
+    this.fileSystemUtils = fileSystemUtils;
     this.kieServerHost = kieServerHost;
     this.kieServerUrl = kieServerUrl;
     this.workbenchProtocol = workbenchProtocol;
@@ -265,7 +268,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
 
     if (kieServerHost.contains("localhost") || kieServerHost.contains("127.0.0.1")) {
       // if running on local jbpm server provide the artifacts via local maven repository
-      File repositoryDir = Files.createTempDirectory(UUID.randomUUID().toString()).toFile();
+      File repositoryDir = fileSystemUtils.createTempDirectory().toFile();
       String repositoryUrl = repositoryDir.toURI().toURL().toExternalForm();
 
       // workaround to reset the maven repository for the jbpm server. This is required for running multiple unittest.

@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Enumeration;
-import java.util.UUID;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -35,6 +34,17 @@ public class FileSystemUtils {
   public FileSystemUtils(ApplicationContext applicationContext, @Value("${maven.repository}") String mavenRepository){
     this.applicationContext = applicationContext;
     this.mavenRepository = Paths.get(mavenRepository);
+  }
+
+  /**
+   * Creates a new directory in the default temporary-file directory that gets auto. deleted on exit
+   * @return the created dir
+   * @throws IOException if an I/O error occurs or the temporary-file directory does not exist
+   */
+  public Path createTempDirectory() throws IOException {
+    Path tmpdir = Files.createTempDirectory(null);
+    tmpdir.toFile().deleteOnExit();
+    return tmpdir;
   }
 
   /**
@@ -120,7 +130,7 @@ public class FileSystemUtils {
   public File unzip(File zipFile) {
     Path outputPath = null;
     try {
-      outputPath = Files.createTempDirectory(UUID.randomUUID().toString());
+      outputPath = createTempDirectory();
     } catch (IOException e) {
       LOGGER.error("Error while creating tmp dir for unzipping", e);
     }
