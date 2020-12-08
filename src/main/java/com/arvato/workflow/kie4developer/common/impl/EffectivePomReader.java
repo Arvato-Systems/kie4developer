@@ -110,7 +110,7 @@ public class EffectivePomReader {
         String activeProfile = null;
         if (settings.getActiveProfiles().isEmpty()) {
           for (Profile profile : settings.getProfiles()) {
-            if (profile.getActivation().isActiveByDefault()) {
+            if (profile.getActivation() != null && profile.getActivation().isActiveByDefault()) {
               activeProfile = profile.getId();
             }
           }
