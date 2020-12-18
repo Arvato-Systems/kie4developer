@@ -14,7 +14,6 @@ import org.kie.server.api.model.admin.MigrationReportInstance;
 public interface IDeploymentHelper {
 
 	// TODO: Support form upload - this is a BICCW specific thing
-	// TODO: Support BPMN SVG image generation - this is usually handled within frontend (kie-workbench)
 
 	/**
 	 * Get the release information

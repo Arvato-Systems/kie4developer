@@ -11,7 +11,7 @@
 	<groupId>com.arvato.workflow</groupId>
 	<artifactId>kie4developer</artifactId>
 
-	<name>KIE4Developer - Work with KIE the easy way</name>
+	<name>KIE4Developer</name>
 	<description>Template Project to easily create KIE Workflow Projects and deploy them to a KIE Server</description>
 
 	<properties>
@@ -20,6 +20,7 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<version.swagger-ui>2.2.10</version.swagger-ui>
 		<version.swagger-jaxrs>1.5.24</version.swagger-jaxrs>
+		<enforcer.skip>true</enforcer.skip> <!-- skip the maven-enforcer-plugin -->
 	</properties>
 
 	<!-- KIE-Server required libs -->
@@ -96,6 +97,13 @@
 			<artifactId>jbpm-bpmn2</artifactId>
 		</dependency>
 
+		<!-- SVG graphics creation -->
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-all</artifactId>
+			<version>1.13</version>
+		</dependency>
+
 		<!-- test dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -119,42 +127,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-enforcer-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>enforce-direct-dependencies</id>
-						<phase>validate</phase>
-						<goals>
-							<goal>enforce</goal>
-						</goals>
-						<configuration>
-							<fail>false</fail>
-						</configuration>
-					</execution>
-					<execution>
-						<id>no-managed-deps</id>
-						<goals>
-							<goal>enforce</goal>
-						</goals>
-						<phase>initialize</phase>
-						<configuration>
-							<rules>
-								<requireManagedDeps implementation="org.commonjava.maven.enforcer.rule.EnforceManagedDepsRule">
-									<checkProfiles>true</checkProfiles>
-									<failOnViolation>false</failOnViolation>
-								</requireManagedDeps>
-							</rules>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
 
 	<profiles>
 		<profile>

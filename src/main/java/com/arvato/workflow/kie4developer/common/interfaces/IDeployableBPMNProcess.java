@@ -53,10 +53,17 @@ public interface IDeployableBPMNProcess {
   void buildBPMNModel(RuleFlowProcessFactory builder);
 
   /**
-   * Build the BPMN Process Model via .bpmn file.
+   * Build the BPMN Process Model via .bpmn file
    *
-   * @return the BPMN Process Model as XML File Resource
+   * @return the BPMN Process Model as XML file Resource
    */
   default Resource buildBPMNModel() { return null; }
+
+  /**
+   * Build the BPMN Process Model Image
+   *
+   * @return the BPMN Process Model as SVG file Resource
+   */
+  default Resource buildBPMNModelImage() { return null; }
 
 }

@@ -2,6 +2,8 @@ package com.arvato.workflow.kie4developer.common.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -80,13 +82,24 @@ public class EffectivePomReader {
     if (cachedModel != null) {
       return cachedModel;
     }
+
     File pomFile;
     if (fileSystemUtils.runAsFatJar()) {
       pomFile = fileSystemUtils.getFile(Paths.get("META-INF", "maven")).listFiles()[0].listFiles()[0].toPath()
           .resolve("pom.xml").toFile();
     } else {
       pomFile = fileSystemUtils.getFile(Paths.get("pom.xml"));
+      if (!pomFile.exists()){
+        try {
+          Path compiledClassesPath = Paths.get(this.getClass().getResource("/").toURI());
+          Path rootPath = compiledClassesPath.getParent().getParent();
+          pomFile = rootPath.resolve("pom.xml").toFile();
+        } catch (URISyntaxException e) {
+          LOGGER.error("Fallback to resolve pom.xml on classpath failed", e);
+        }
+      }
     }
+
     try {
       DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
       locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);

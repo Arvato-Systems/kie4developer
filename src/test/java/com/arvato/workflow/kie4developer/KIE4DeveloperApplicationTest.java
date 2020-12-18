@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.arvato.workflow.kie4developer.common.impl.KieClient;
+import com.arvato.workflow.kie4developer.common.impl.KieClientDeploymentHelper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.kie.server.common.rest.NoEndpointFoundException;
@@ -30,6 +31,7 @@ public class KIE4DeveloperApplicationTest {
   private KieServer kieServer;
   @Autowired
   private KieClient kieClient;
+
   // kie workbench connection
   @Value("${kieworkbench.protocol}")
   private String kieWorkbenchProtocol;
@@ -39,6 +41,9 @@ public class KIE4DeveloperApplicationTest {
   private String kieWorkbenchPort;
   @Value("${kieworkbench.context}")
   private String kieWorkbenchContext;
+
+  @Autowired
+  private KieClientDeploymentHelper kieClientDeploymentHelper;
 
   @Test
   public void testStartupOfIntegratedKIEServer() {
@@ -64,13 +69,14 @@ public class KIE4DeveloperApplicationTest {
 
   @Test
   public void testConnectionToKIEWorkbench() {
-    if (!kieWorkbenchHost.contains("localhost") && !kieWorkbenchHost.contains("127.0.0.1")){
+    if (!kieWorkbenchHost.contains("localhost") && !kieWorkbenchHost.contains("127.0.0.1")) {
       try {
         String kieWorkbenchUrl =
             kieWorkbenchProtocol + "://" + kieWorkbenchHost + ":" + kieWorkbenchPort + "/" + kieWorkbenchContext
                 + "/kie-wb.jsp";
         ResponseEntity<String> kieWorkbenchWebsite = new RestTemplate().getForEntity(kieWorkbenchUrl, String.class);
-        assertTrue("KIE Workbench website is not available", kieWorkbenchWebsite.getBody().contains("Business Central"));
+        assertTrue("KIE Workbench website is not available",
+            kieWorkbenchWebsite.getBody().contains("Business Central"));
       } catch (ResourceAccessException e) {
         fail(
             "Connection to KIE Workbench can't be established. Please start a external workbench: docker run -p 8080:8080 -p 8001:8001 -d --name jbpm-workbench jboss/jbpm-workbench-showcase:7.23.0.Final && docker logs -f jbpm-workbench");

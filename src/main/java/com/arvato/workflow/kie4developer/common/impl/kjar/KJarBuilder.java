@@ -113,8 +113,7 @@ public class KJarBuilder {
     for (Class<? extends IDeployableBPMNProcess> deployableProcess : deployableProcesses) {
       if (!deployableProcess.isInterface() && !Modifier.isAbstract(deployableProcess.getModifiers())) {
         IDeployableBPMNProcess deployableBPMNProcess = deployableProcess.newInstance();
-        Resource resource = ProcessBuilder.build(deployableBPMNProcess);
-        resources.add(resource); // .bpmn
+        resources.addAll(ProcessBuilder.build(deployableBPMNProcess)); // .bpmn + .svg
       }
     }
     for (Entry<String, File> deployableWorkitemhandlerFileSet : classFilesToDeploy.entrySet()) {
