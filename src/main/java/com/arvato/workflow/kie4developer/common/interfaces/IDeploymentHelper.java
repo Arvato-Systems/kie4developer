@@ -37,6 +37,14 @@ public interface IDeploymentHelper {
 	void setProcessesToDeploy(List<Class<? extends IDeployableBPMNProcess>> processesToDeploy);
 
 	/**
+	 * Define the Process(es) and Mock(s) you want to deploy on the Server
+	 *
+	 * @param processesToDeploy process to deploy
+	 * @param processesToMock process to mock
+	 */
+	void setProcessesToDeploy(List<Class<? extends IDeployableBPMNProcess>> processesToDeploy, List<Class<? extends IDeployableBPMNProcess>> processesToMock);
+
+	/**
 	 * Define the Service class(es) you want to deploy on the Server
 	 *
 	 * @param serviceClassesToDeploy classes to deploy

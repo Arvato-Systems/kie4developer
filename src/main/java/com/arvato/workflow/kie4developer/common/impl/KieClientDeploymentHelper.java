@@ -10,11 +10,9 @@ import com.arvato.workflow.kie4developer.common.interfaces.IRelease;
 import com.arvato.workflow.kie4developer.workitemhandler.JavaWorkItemHandler;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import org.apache.maven.model.Dependency;
 import org.appformer.maven.integration.Aether;
 import org.appformer.maven.integration.MavenRepository;
@@ -50,6 +48,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private FileSystemUtils fileSystemUtils;
   private List<IDeployableDependency> dependenciesToDeploy;
   private List<Class<? extends IDeployableBPMNProcess>> processesToDeploy;
+  private List<Class<? extends IDeployableBPMNProcess>> processesToMock;
   private List<Class> serviceClassesToDeploy;
   private List<Class<? extends IDeployableWorkItemHandler>> workItemHandlersToDeploy;
   private String kieServerHost;
@@ -94,6 +93,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     this.workbenchMavenContext = workbenchMavenContext;
     this.processesToDeploy = new ArrayList<>(
         new Reflections(this.release.getGroupId() + ".processes").getSubTypesOf(IDeployableBPMNProcess.class));
+    this.processesToMock = new ArrayList<>();
     this.serviceClassesToDeploy = new ArrayList<>(
         new Reflections(this.release.getGroupId() + ".services", new SubTypesScanner(false))
             .getSubTypesOf(Object.class));
@@ -146,10 +146,15 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     this.dependenciesToDeploy = dependenciesToDeploy;
   }
 
-  //TODO: add support for creating process models mocks for unittests
   @Override
   public void setProcessesToDeploy(List<Class<? extends IDeployableBPMNProcess>> processesToDeploy) {
     this.processesToDeploy = processesToDeploy;
+  }
+
+  @Override
+  public void setProcessesToDeploy(List<Class<? extends IDeployableBPMNProcess>> processesToDeploy, List<Class<? extends IDeployableBPMNProcess>> processesToMock) {
+    this.processesToDeploy = processesToDeploy;
+    this.processesToMock = processesToMock;
   }
 
   @Override
@@ -227,7 +232,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     Map<String, File> jarAndPomFile;
     try {
       jarAndPomFile = kJarBuilder
-          .buildKjar(dependenciesToDeploy, processesToDeploy, workItemHandlersToDeploy, serviceClassesToDeploy);
+          .buildKjar(dependenciesToDeploy, processesToDeploy, processesToMock, workItemHandlersToDeploy, serviceClassesToDeploy);
     } catch (Exception e) {
       LOGGER.error("Error while creating the kjar file", e);
       return false;
@@ -419,5 +424,4 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     LOGGER.info("Undeployment complete");
     return result;
   }
-
 }

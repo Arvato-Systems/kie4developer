@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.arvato.workflow.kie4developer.common.impl.KieClient;
-import com.arvato.workflow.kie4developer.common.impl.KieClientDeploymentHelper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.kie.server.common.rest.NoEndpointFoundException;
@@ -41,9 +40,6 @@ public class KIE4DeveloperApplicationTest {
   private String kieWorkbenchPort;
   @Value("${kieworkbench.context}")
   private String kieWorkbenchContext;
-
-  @Autowired
-  private KieClientDeploymentHelper kieClientDeploymentHelper;
 
   @Test
   public void testStartupOfIntegratedKIEServer() {

@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import org.drools.compiler.kie.builder.impl.InternalKieModule;
+import org.jbpm.ruleflow.core.RuleFlowProcessFactory;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieBuilder;
 import org.kie.api.builder.KieFileSystem;
@@ -60,15 +61,17 @@ public class KJarBuilder {
    *
    * @param deployableDependencies     related dependencies
    * @param deployableProcesses        related processes
+   * @param processesToMock        related processes to mock
    * @param deployableWorkitemhandlers related workitemhandlers
-   * @param deployableServiceclasses   related service classes
+   * @param deployableServiceClasses   related service classes
    * @return the kjar file
    * @throws Exception if compilation fails or I/O error occurs
    */
   public Map<String, File> buildKjar(List<IDeployableDependency> deployableDependencies,
       List<Class<? extends IDeployableBPMNProcess>> deployableProcesses,
+      List<Class<? extends IDeployableBPMNProcess>> processesToMock,
       List<Class<? extends IDeployableWorkItemHandler>> deployableWorkitemhandlers,
-      List<Class> deployableServiceclasses) throws Exception {
+      List<Class> deployableServiceClasses) throws Exception {
     KieServices ks = KieServices.Factory.get();
     KieFileSystem kfs = ks.newKieFileSystem();
 
@@ -79,7 +82,7 @@ public class KJarBuilder {
     for (Class<? extends IDeployableWorkItemHandler> workitemhandlerClass : deployableWorkitemhandlers) {
       addClassFileToDeployment(workitemhandlerClass, classFilesToDeploy);
     }
-    for (Class serviceClass : deployableServiceclasses) {
+    for (Class serviceClass : deployableServiceClasses) {
       addClassFileToDeployment(serviceClass, classFilesToDeploy);
     }
     for (IDeployableDependency dependency : deployableDependencies) {
@@ -113,6 +116,12 @@ public class KJarBuilder {
     for (Class<? extends IDeployableBPMNProcess> deployableProcess : deployableProcesses) {
       if (!deployableProcess.isInterface() && !Modifier.isAbstract(deployableProcess.getModifiers())) {
         IDeployableBPMNProcess deployableBPMNProcess = deployableProcess.newInstance();
+        resources.addAll(ProcessBuilder.build(deployableBPMNProcess)); // .bpmn + .svg
+      }
+    }
+    for (Class<? extends IDeployableBPMNProcess> deployableProcessToMock : processesToMock) {
+      if (!deployableProcessToMock.isInterface() && !Modifier.isAbstract(deployableProcessToMock.getModifiers())) {
+        IDeployableBPMNProcess deployableBPMNProcess = mockProcess(deployableProcessToMock);
         resources.addAll(ProcessBuilder.build(deployableBPMNProcess)); // .bpmn + .svg
       }
     }
@@ -185,6 +194,47 @@ public class KJarBuilder {
     files.put("jar", jarFile);
     files.put("pom", pomFile);
     return files;
+  }
+
+  /**
+   * Generates a process instance that use a mock implementation
+   *
+   * @param deployableProcessToMock the process to deploy as mock
+   * @return the process instance that use a mock implementation
+   * @throws Exception if compilation fails or I/O error occurs
+   */
+  private IDeployableBPMNProcess mockProcess(Class<? extends IDeployableBPMNProcess> deployableProcessToMock) throws Exception {
+    IDeployableBPMNProcess realInstance = deployableProcessToMock.newInstance();
+    return new IDeployableBPMNProcess() {
+
+      @Override
+      public String getName() {
+        return realInstance.getName();
+      }
+
+      @Override
+      public String getVersion() {
+        return realInstance.getVersion();
+      }
+
+      @Override
+      public void buildBPMNModel(RuleFlowProcessFactory factory) {
+        factory
+            // header
+            .name(getName())
+            .version(getVersion())
+            .packageName(getPackage())
+            // variables
+
+            // nodes (the mock just executes start and end)
+            .startNode(1).name("Start").done()
+
+            .endNode(2).name("End").done()
+
+            // connections
+            .connection(1, 2);
+      }
+    };
   }
 
   /**
