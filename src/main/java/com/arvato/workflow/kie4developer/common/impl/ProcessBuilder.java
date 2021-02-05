@@ -67,8 +67,7 @@ public class ProcessBuilder {
       // generate the svg representation
       try {
         Resource processImageResource = ResourceFactory.newByteArrayResource(ProcessImageBuilder.createImage(process));
-        processImageResource.setSourcePath(deployableBPMNProcess.getProcessId()
-            + ".svg"); // source path or target path must be set to be added into kbase
+        processImageResource.setSourcePath(deployableBPMNProcess.getProcessId() + "-svg.svg"); // source path or target path must be set to be added into kbase
         resList.add(processImageResource);
       } catch (Exception e) {
         LOGGER.error("Error while creating process model image", e);

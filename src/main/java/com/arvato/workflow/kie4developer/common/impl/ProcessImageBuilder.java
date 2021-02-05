@@ -2,6 +2,7 @@ package com.arvato.workflow.kie4developer.common.impl;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
@@ -10,16 +11,14 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.RoundRectangle2D;
-import java.io.File;
-import java.io.FileWriter;
-import java.nio.file.Files;
+import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.batik.anim.dom.SVGDOMImplementation;
 import org.apache.batik.parser.AWTPathProducer;
 import org.apache.batik.parser.PathParser;
 import org.apache.batik.svggen.SVGGraphics2D;
-import org.apache.commons.io.FileUtils;
 import org.jbpm.ruleflow.core.RuleFlowProcess;
 import org.jbpm.workflow.core.node.ActionNode;
 import org.jbpm.workflow.core.node.EndNode;
@@ -36,6 +35,7 @@ import org.kie.api.definition.process.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Element;
 import org.w3c.dom.svg.SVGDocument;
 
 /**
@@ -61,15 +61,19 @@ public class ProcessImageBuilder {
   public static byte[] createImage(RuleFlowProcess process) throws Exception {
     DOMImplementation impl = SVGDOMImplementation.getDOMImplementation();
     SVGDocument document = (SVGDocument) impl.createDocument(SVGDOMImplementation.SVG_NAMESPACE_URI, "svg", null);
-    SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
 
+    SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
     svgGenerator.setFont(new Font("Arial", 0, 11));
+    int imgWidth = 0;
+    int imgHeight = 0;
 
     for (Node node : process.getNodes()) {
       int x = (int) node.getMetaData().get("x");
       int y = (int) node.getMetaData().get("y");
       int width = (int) node.getMetaData().get("width");
       int height = (int) node.getMetaData().get("height");
+      imgWidth = Integer.max(imgWidth, x);
+      imgHeight = Integer.max(imgHeight, y);
 
       //TODO: use specified connection waypoints from XML & show names
       for (List<Connection> connections : node.getOutgoingConnections().values()) {
@@ -133,13 +137,20 @@ public class ProcessImageBuilder {
         LOGGER.error(String.format("unsupported node with id '%s' on process with id '%s'", node.getId(), process.getId()));
       }
     }
+    imgWidth+=100;
+    imgHeight+=100;
+    svgGenerator.setSVGCanvasSize(new Dimension(imgWidth,imgHeight));
 
-    File svgFile = Files.createTempFile(null, ".svg").toFile();
-    svgFile.deleteOnExit();
-    FileWriter out = new FileWriter(svgFile);
-    svgGenerator.stream(out, true);
+    // generate svg file
+    Element root = svgGenerator.getRoot();
+    root.setAttributeNS(null, "viewBox", "0 0 "+imgWidth+" " + imgHeight);
 
-    return FileUtils.readFileToByteArray(svgFile);
+    StringWriter stringWriter = new StringWriter();
+    svgGenerator.stream(root,stringWriter, true,false);
+    String svgString = stringWriter.toString();
+    svgString = svgString.substring(142); // remove xml header
+
+    return svgString.getBytes(Charset.forName("UTF-8"));
   }
 
   private static void drawActivity(SVGGraphics2D svgGenerator, int x, int y, int width, int height, String name,
