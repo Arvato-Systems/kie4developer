@@ -59,6 +59,7 @@ public class ProcessImageBuilder {
    * @throws Exception on any Exception
    */
   public static byte[] createImage(RuleFlowProcess process) throws Exception {
+    LOGGER.debug("Creating image for process with id '{}'", process.getId());
     DOMImplementation impl = SVGDOMImplementation.getDOMImplementation();
     SVGDocument document = (SVGDocument) impl.createDocument(SVGDOMImplementation.SVG_NAMESPACE_URI, "svg", null);
 

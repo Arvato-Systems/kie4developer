@@ -151,7 +151,7 @@ public class KJarBuilder {
           String.format("Process compilation error: %s", builder.getResults().getMessages().toString()));
     }
 
-    File tmpdir = fileSystemUtils.createTempDirectory().toFile();
+    File tmpdir = fileSystemUtils.createTempDirectory(!LOGGER.isDebugEnabled()).toFile();
     long timestamp = Instant.now().getEpochSecond();
 
     // build the kjar file that represents the kmodule

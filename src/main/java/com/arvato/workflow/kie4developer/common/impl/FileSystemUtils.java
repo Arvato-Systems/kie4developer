@@ -37,14 +37,26 @@ public class FileSystemUtils {
   }
 
   /**
+   * Creates a new directory in the default temporary-file directory that gets auto.
+   * @param deleteOnExit if true folder gets deleted on application exit, otherwise not
+   * @return the created dir
+   * @throws IOException if an I/O error occurs or the temporary-file directory does not exist
+   */
+  public Path createTempDirectory(boolean deleteOnExit) throws IOException {
+    Path tmpdir = Files.createTempDirectory(null);
+    if (deleteOnExit){
+      tmpdir.toFile().deleteOnExit();
+    }
+    return tmpdir;
+  }
+
+  /**
    * Creates a new directory in the default temporary-file directory that gets auto. deleted on exit
    * @return the created dir
    * @throws IOException if an I/O error occurs or the temporary-file directory does not exist
    */
   public Path createTempDirectory() throws IOException {
-    Path tmpdir = Files.createTempDirectory(null);
-    tmpdir.toFile().deleteOnExit();
-    return tmpdir;
+    return createTempDirectory(true);
   }
 
   /**

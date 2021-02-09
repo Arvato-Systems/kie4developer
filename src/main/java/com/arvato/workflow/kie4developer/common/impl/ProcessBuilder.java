@@ -99,7 +99,8 @@ public class ProcessBuilder {
    *
    * @param process the process model to layout
    */
-  private static void layoutElements(RuleFlowProcess process) throws Exception {
+  private static void layoutElements(RuleFlowProcess process) {
+    LOGGER.debug("Layouting process with id '{}'", process.getId());
     //TODO: Layout more pretty.
     int height = 38;
     int width = 38;
