@@ -149,7 +149,8 @@ public class ProcessImageBuilder {
     StringWriter stringWriter = new StringWriter();
     svgGenerator.stream(root,stringWriter, true,false);
     String svgString = stringWriter.toString();
-    svgString = svgString.substring(142); // remove xml header
+
+    svgString = svgString.substring(svgString.indexOf("<svg")); // remove xml header
 
     return svgString.getBytes(Charset.forName("UTF-8"));
   }
