@@ -62,6 +62,7 @@ public interface IDeploymentHelper {
 	 * Deploy all given Processes into the Server Container
 	 *
 	 * @param overwrite overwrite existing container with same container id
+	 * @return <code>true</code> if deployment was successful, otherwise <code>false</code>
 	 */
 	boolean deploy(boolean overwrite);
 
@@ -69,6 +70,7 @@ public interface IDeploymentHelper {
 	 * Undeploy the Server Container
 	 *
 	 * @oaram cancelAllRunningInstances cancel running process instances
+	 * @return <code>true</code> if undeployment was successful, otherwise <code>false</code>
 	 */
 	boolean undeploy(boolean cancelAllRunningInstances);
 

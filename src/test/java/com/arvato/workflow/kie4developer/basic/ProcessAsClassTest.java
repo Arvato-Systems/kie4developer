@@ -21,7 +21,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
     properties = {
-        "spring.application.autodeploy=false"
+        "spring.application.autodeploy=false",
+        "global.test=Bonjour"
     })
 public class ProcessAsClassTest extends AbstractProcessTest {
 

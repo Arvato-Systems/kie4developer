@@ -15,6 +15,7 @@ public class HelloWorldProcessV2 implements IDeployableBPMNProcess {
 
   private static final String VERSION = "1.1";
   private static final String MY_VAR = "myvar";
+  private static final String GLOBAL_VAR = "test";
 
   @Override
   public String getVersion() {
@@ -35,7 +36,9 @@ public class HelloWorldProcessV2 implements IDeployableBPMNProcess {
         .packageName(getPackage())
 
         // environment variables
-        // .global("name", "String") // define within application.properties
+        // - define within application.properties
+        // - when defined must be used in at least one place
+        .global(GLOBAL_VAR, new StringDataType().getStringType())
 
         // process variables
         // - yes, we can declare them here, but this is just optional because you can provide any variable anyhow

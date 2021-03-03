@@ -12,7 +12,8 @@ import org.kie.server.api.model.instance.TaskSummary;
 public interface IExecutionHelper {
 
   /**
-   * Start a new Process Instance of the given Process
+   * Start a new Process Instance of the given Process This call blocks until the process flow in reaction to the start
+   * is complete.
    *
    * @param deploymentId the deployment id (typical equal to the process id)
    * @param processId    the process id
@@ -72,7 +73,8 @@ public interface IExecutionHelper {
   void startTask(Long taskId, String username, Map<String, Object> params);
 
   /**
-   * Complete a task (in status in progress) by the user. The task will move to status completed.
+   * Complete a task (in status in progress) by the user. The task will move to status completed. This call blocks until
+   * the process flow in reaction to the task submitted is complete.
    *
    * @param taskId   the task id
    * @param username the username
@@ -84,8 +86,8 @@ public interface IExecutionHelper {
    * Send a signal to process instance.
    *
    * @param processInstanceId the process instance that should be notified
-   * @param signalName the signal name
-   * @param event the signal event
+   * @param signalName        the signal name
+   * @param event             the signal event
    */
   void sendSignal(Long processInstanceId, String signalName, Object event);
 }
