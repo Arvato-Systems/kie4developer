@@ -243,7 +243,9 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   @Override
   public boolean deploy(boolean overwrite) {
     if (overwrite) {
-      undeploy(true);
+      if (!undeploy(true)){
+        return false;
+      }
     }
     LOGGER.info("Deploying to KIE-Server...");
 
@@ -271,7 +273,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     try {
       uploadJar(jarAndPomFile.get("jar"), jarAndPomFile.get("pom"));
     } catch (Exception e) {
-      LOGGER.error("Error while uploading jar file {}}. This could be also caused by missing dependencies", jarAndPomFile.get("jar").getAbsolutePath(), e);
+      LOGGER.error("Error while uploading jar file {}. This could be also caused by missing dependencies", jarAndPomFile.get("jar").getAbsolutePath(), e);
       return false;
     }
 
@@ -283,7 +285,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
       return false;
     }
 
-    LOGGER.info("Deployment complete");
+    LOGGER.info("Deployment successful");
     return true;
   }
 
@@ -388,12 +390,11 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     LOGGER.info("Undeployment on KIE-Server...");
     // send deployment command to server
     KieContainerResource container = kieClient.getKieServicesClient().getContainerInfo(containerId).getResult();
-    boolean result = false;
     if (container != null) {
       // if the container is unhealthy we must fix this first by re-deploy it.
       if (!container.getStatus().equals(KieContainerStatus.STARTED) && cancelAllRunningInstances) {
         LOGGER.warn("Error while aborting Process Instances: KIE Container {} is in status {} which does not allow aborts of process instances", containerId, container.getStatus().name());
-        return result;
+        return false;
       }
 
       boolean retry;
@@ -416,7 +417,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
         if (processInstanceIdsToAbort.size() > 0) {
           if (!cancelAllRunningInstances) {
             LOGGER.error("Error disposing KIE Container {}. It contains active process instances", containerId);
-            return result;
+            return false;
           }else {
             try {
               kieClient.getProcessClient().abortProcessInstances(containerId, processInstanceIdsToAbort);
@@ -438,19 +439,18 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
       ServiceResponse<Void> responseDispose = kieClient.getKieServicesClient().disposeContainer(containerId);
       if (responseDispose.getType() == ResponseType.FAILURE) {
         LOGGER.error("Error disposing KIE Container {}. Message: {}", containerId, responseDispose.getMsg());
+        return false;
       } else {
         LOGGER.warn(
             "Removing of deployed jars from the kie server and kie workbench internal maven repository isn't supported. "
                 + "Please take care when you re-deploying jars with the same name.");
         LOGGER.info("KIE Container disposed: {}", containerId);
-        result = true;
       }
     } else {
       LOGGER.info("KIE Container {} does not exist.", containerId);
-      result = true;
     }
 
-    LOGGER.info("Undeployment complete");
-    return result;
+    LOGGER.info("Undeployment successful");
+    return true;
   }
 }
