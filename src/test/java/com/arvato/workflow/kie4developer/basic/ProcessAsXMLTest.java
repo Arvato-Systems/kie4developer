@@ -77,5 +77,4 @@ public class ProcessAsXMLTest extends AbstractProcessTest {
         processInstance.getState().intValue());
   }
 
-
 }

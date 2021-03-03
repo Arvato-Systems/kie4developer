@@ -11,8 +11,12 @@ import com.arvato.workflow.kie4developer.workitemhandler.JavaWorkItemHandler;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.stream.StreamSupport;
 import org.apache.maven.model.Dependency;
 import org.appformer.maven.integration.Aether;
 import org.appformer.maven.integration.MavenRepository;
@@ -32,7 +36,12 @@ import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.AbstractEnvironment;
+import org.springframework.core.env.EnumerablePropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.MutablePropertySources;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -51,6 +60,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private List<Class<? extends IDeployableBPMNProcess>> processesToMock;
   private List<Class> serviceClassesToDeploy;
   private List<Class<? extends IDeployableWorkItemHandler>> workItemHandlersToDeploy;
+  private Properties globals;
   private String kieServerHost;
   private String kieServerUrl;
   private String workbenchProtocol;
@@ -77,7 +87,8 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
       @Value("${kieworkbench.context}") String workbenchContext,
       @Value("${kieworkbench.context.maven}") String workbenchMavenContext,
       @Value("${kieserver.host}") String kieServerHost,
-      @Value("${kieserver.location}") String kieServerUrl) {
+      @Value("${kieserver.location}") String kieServerUrl,
+      @Autowired Environment springEnv) {
     this.release = release;
     this.effectivePomReader = effectivePomReader;
     this.kJarBuilder = kJarBuilder;
@@ -102,8 +113,26 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
             .getSubTypesOf(IDeployableWorkItemHandler.class));
     this.workItemHandlersToDeploy.add(JavaWorkItemHandler.class);
     this.dependenciesToDeploy = getDependencies();
+    this.globals = getGlobals(springEnv);
 
     System.setProperty("kieserver.location", this.kieServerUrl); // required for JavaWorkItemHandler
+  }
+
+  /**
+   * Get all application properties with prefix "global."
+   * @param springEnv Spring environment
+   * @return the global Properties
+   */
+  private Properties getGlobals(Environment springEnv){
+    Properties globals = new Properties();
+    MutablePropertySources propSrcs = ((AbstractEnvironment) springEnv).getPropertySources();
+    StreamSupport.stream(propSrcs.spliterator(), false)
+        .filter(ps -> ps instanceof EnumerablePropertySource)
+        .map(ps -> ((EnumerablePropertySource) ps).getPropertyNames())
+        .flatMap(Arrays::stream)
+        .filter(propName -> propName.startsWith("global."))
+        .forEach(propName -> globals.setProperty(propName.substring("global.".length()), springEnv.getProperty(propName)));
+    return globals;
   }
 
   /**
@@ -232,7 +261,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     Map<String, File> jarAndPomFile;
     try {
       jarAndPomFile = kJarBuilder
-          .buildKjar(dependenciesToDeploy, processesToDeploy, processesToMock, workItemHandlersToDeploy, serviceClassesToDeploy);
+          .buildKjar(dependenciesToDeploy, processesToDeploy, processesToMock, workItemHandlersToDeploy, serviceClassesToDeploy, globals);
     } catch (Exception e) {
       LOGGER.error("Error while creating the kjar file", e);
       return false;

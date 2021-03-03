@@ -54,4 +54,5 @@ public class HelloWorldWorkItemHandler implements IDeployableWorkItemHandler {
   private Object getProcessVariableOrDefault(WorkItem workItem, String key, Object defaultValue) {
     return workItem.getParameters().get(key) == null ? defaultValue : workItem.getParameters().get(key);
   }
+
 }

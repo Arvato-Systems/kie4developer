@@ -35,8 +35,7 @@ public class HelloWorldProcessV3 implements IDeployableBPMNProcess {
         .packageName(getPackage())
 
         // environment variables
-        // - yes, we can define them here, but JBPM folks suggest to not use them
-        // .global("environment", "org.kie.server.springboot.samples.server.globals.EnvironmentGlobal")
+        // .global("name", "String") // define within application.properties
 
         // process variables
         // - yes, we can declare them here, but this is just optional because you can provide any variable anyhow

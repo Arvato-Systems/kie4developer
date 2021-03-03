@@ -54,4 +54,5 @@ public class EvaluationProcess implements IDeployableBPMNProcess {
     }
     return res;
   }
+
 }

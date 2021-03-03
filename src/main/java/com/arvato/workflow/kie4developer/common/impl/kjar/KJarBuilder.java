@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import org.drools.compiler.kie.builder.impl.InternalKieModule;
 import org.jbpm.ruleflow.core.RuleFlowProcessFactory;
@@ -60,8 +61,9 @@ public class KJarBuilder {
    * Build the Kjar (alias KModule) with all Processes and Workitemhandler
    *
    * @param deployableDependencies     related dependencies
+   * @param globals                    the environment variables (globals) for the release
    * @param deployableProcesses        related processes
-   * @param processesToMock        related processes to mock
+   * @param processesToMock            related processes to mock
    * @param deployableWorkitemhandlers related workitemhandlers
    * @param deployableServiceClasses   related service classes
    * @return the kjar file
@@ -71,7 +73,7 @@ public class KJarBuilder {
       List<Class<? extends IDeployableBPMNProcess>> deployableProcesses,
       List<Class<? extends IDeployableBPMNProcess>> processesToMock,
       List<Class<? extends IDeployableWorkItemHandler>> deployableWorkitemhandlers,
-      List<Class> deployableServiceClasses) throws Exception {
+      List<Class> deployableServiceClasses, Properties globals) throws Exception {
     KieServices ks = KieServices.Factory.get();
     KieFileSystem kfs = ks.newKieFileSystem();
 
@@ -90,7 +92,7 @@ public class KJarBuilder {
     }
 
     // generate xml-files
-    String deploymentDescriptor = buildDeploymentDescriptor(deployableWorkitemhandlers,
+    String deploymentDescriptor = buildDeploymentDescriptor(deployableWorkitemhandlers, globals,
         release.isDeploymentTargetBICCW(), release.isIncludeProcessInstanceListener(),
         release.isIncludeTaskEmailEventListener(), release.isIncludeTaskEventListener());
     String kmoduleInfo = buildKmoduleInfo();
@@ -396,6 +398,7 @@ public class KJarBuilder {
    * Build the kie-deployment-descriptor.xml for the provided release
    *
    * @param deployableWorkitemhandlers     the related workitemhandlers
+   * @param globals                        the environment variables (globals) for the release
    * @param includeBICCWListeners          flag to indicate if the BICCW listeners has to be included
    * @param includeProcessinstancelistener flag to indicate if the BICCW ImprovedBicceProcessInstanceListener has to be included
    * @param includeTaskemaileventlistener  flag to indicate if the BICCW BicceTaskEmailEventListener has to be included
@@ -403,8 +406,8 @@ public class KJarBuilder {
    * @return the kie-deployment-descriptor.xml file content
    */
   private String buildDeploymentDescriptor(List<Class<? extends IDeployableWorkItemHandler>> deployableWorkitemhandlers,
-      boolean includeBICCWListeners, boolean includeProcessinstancelistener, boolean includeTaskemaileventlistener,
-      boolean includeTaskeventListener) {
+      Properties globals, boolean includeBICCWListeners, boolean includeProcessinstancelistener,
+      boolean includeTaskemaileventlistener, boolean includeTaskeventListener) {
     String deplomentDescriptorXml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
         + "<deployment-descriptor xsi:schemaLocation=\"http://www.jboss.org/jbpm deployment-descriptor.xsd\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
         + "    <persistence-unit>org.jbpm.domain</persistence-unit>\n"
@@ -443,7 +446,16 @@ public class KJarBuilder {
       deplomentDescriptorXml += "    <event-listeners/>\n"
           + "    <task-event-listeners/>\n";
     }
-    deplomentDescriptorXml += "    <globals/>\n"
+    deplomentDescriptorXml += "    <globals>\n";
+    for (String globalName : globals.stringPropertyNames()) {
+      deplomentDescriptorXml +="        <global>\n"
+          + "            <resolver>mvel</resolver>\n"
+          + "            <identifier>\""+globals.getProperty(globalName)+"\"</identifier>\n"
+          + "            <parameters/>\n"
+          + "            <name>"+globalName+"</name>\n"
+          + "        </global>\n";
+    }
+    deplomentDescriptorXml += "    </globals>\n"
         + "    <work-item-handlers>\n";
     for (Class<? extends IDeployableWorkItemHandler> workitemhandler : deployableWorkitemhandlers) {
       deplomentDescriptorXml += "        <work-item-handler>\n"

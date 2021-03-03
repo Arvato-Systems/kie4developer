@@ -13,6 +13,7 @@ public class HelloWorldProcess implements IDeployableBPMNProcess {
 
   private static final String VERSION = "1.0";
   private static final String MY_VAR = "myvar";
+  private static final String GLOBAL_VAR = "test";
 
   @Override
   public String getVersion() {
@@ -28,8 +29,7 @@ public class HelloWorldProcess implements IDeployableBPMNProcess {
         .packageName(getPackage())
 
         // environment variables
-        // - yes, we can define them here, but JBPM folks suggest to not use them
-        // .global("environment", "org.kie.server.springboot.samples.server.globals.EnvironmentGlobal")
+        .global(GLOBAL_VAR, new StringDataType().getStringType()) // define within application.properties
 
         // process variables
         // - yes, we can declare them here, but this is just optional because you can provide any variable anyhow
@@ -58,7 +58,7 @@ public class HelloWorldProcess implements IDeployableBPMNProcess {
         //	.done()
 
         .actionNode(4).name("Java Action 3")
-        .action("java", "kcontext.setVariable(\"myvar\", \"Bonjour\");")
+        .action("java", "kcontext.setVariable(\""+MY_VAR+"\", kcontext.getKnowledgeRuntime().getGlobal(\""+GLOBAL_VAR+"\"));")
         .done()
 
         .workItemNode(5).name("Work Item 1")
@@ -70,7 +70,7 @@ public class HelloWorldProcess implements IDeployableBPMNProcess {
         .done()
 
         .actionNode(6).name("Java Action 4")
-        .action("java", "System.out.println(kcontext.getVariable(\"myvar\"));")
+        .action("java", "System.out.println(kcontext.getVariable(\""+MY_VAR+"\"));")
         .done()
 
         .humanTaskNode(7).name("Human Task 1")
