@@ -13,6 +13,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.RoundRectangle2D;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.batik.anim.dom.SVGDOMImplementation;
@@ -68,7 +69,9 @@ public class ProcessImageBuilder {
     int imgWidth = 0;
     int imgHeight = 0;
 
+    List<Element> elements = new ArrayList<>();
     for (Node node : process.getNodes()) {
+      long id = node.getId();
       int x = (int) node.getMetaData().get("x");
       int y = (int) node.getMetaData().get("y");
       int width = (int) node.getMetaData().get("width");
@@ -121,7 +124,7 @@ public class ProcessImageBuilder {
             type = "xor";
           }
         }
-        drawGateway(svgGenerator, x, y, width, height, name, type);
+        drawGateway(svgGenerator,x, y, width, height, name, type);
       } else if (node instanceof ActionNode || node instanceof WorkItemNode || node instanceof HumanTaskNode || node instanceof SubProcessNode) {
         String type = null;
         if (node instanceof ActionNode) {
@@ -137,17 +140,32 @@ public class ProcessImageBuilder {
       } else {
         LOGGER.error(String.format("unsupported node with id '%s' on process with id '%s'", node.getId(), process.getId()));
       }
+
+      Element rootG = document.createElement("g");
+      rootG.setAttribute("id", String.valueOf(id));
+      rootG.setAttribute("bpmn2nodeid", String.valueOf(id));
+      Element NodeG = (Element) svgGenerator.getRoot().getLastChild().getLastChild();
+      NodeG.setAttribute("id", id + "?shapeType=BORDER&amp;renderType=STROKE");
+
+      //_A55A369D-0FC6-437D-A723-1DEE2BDF3912?shapeType=BACKGROUND
+      rootG.appendChild(NodeG);
+      elements.add(rootG);
     }
     imgWidth+=100;
     imgHeight+=100;
     svgGenerator.setSVGCanvasSize(new Dimension(imgWidth,imgHeight));
 
     // generate svg file
-    Element root = svgGenerator.getRoot();
-    root.setAttributeNS(null, "viewBox", "0 0 "+imgWidth+" " + imgHeight);
+    Element svg = svgGenerator.getRoot();
+    svg.setAttributeNS(null, "viewBox", "0 0 "+imgWidth+" " + imgHeight);
+
+    Element rootG = (Element) svg.getLastChild();
+    for (Element SubG : elements){
+      rootG.appendChild(SubG);
+    }
 
     StringWriter stringWriter = new StringWriter();
-    svgGenerator.stream(root,stringWriter, true,false);
+    svgGenerator.stream(svg,stringWriter, false,false);
     String svgString = stringWriter.toString();
 
     svgString = svgString.substring(svgString.indexOf("<svg")); // remove xml header
