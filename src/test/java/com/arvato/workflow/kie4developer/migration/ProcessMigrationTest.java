@@ -41,7 +41,7 @@ public class ProcessMigrationTest extends AbstractProcessTest {
     clientDeploymentHelper.undeploy(true);
   }
 
-  public void prepareDeployment1() {
+  private void prepareDeployment1() {
     // prepare release
     clientDeploymentHelper.setProcessesToDeploy(Collections.singletonList(HelloWorldProcess.class));
     clientDeploymentHelper.setWorkItemHandlersToDeploy(Collections.singletonList(HelloWorldWorkItemHandler.class));
@@ -50,7 +50,7 @@ public class ProcessMigrationTest extends AbstractProcessTest {
     clientDeploymentHelper.deploy(true);
   }
 
-  public void prepareDeployment2(String oldContainerId) {
+  private void prepareDeployment2(String oldContainerId) {
     // prepare release
     clientDeploymentHelper.setProcessesToDeploy(Collections.singletonList(HelloWorldProcessV2.class));
     clientDeploymentHelper.setWorkItemHandlersToDeploy(Collections.singletonList(HelloWorldWorkItemHandler.class));
@@ -59,7 +59,7 @@ public class ProcessMigrationTest extends AbstractProcessTest {
     Assert.assertTrue("Migration was not successful", migrationReport.get(0).isSuccessful());
   }
 
-  public void prepareDeployment3() {
+  private void prepareDeployment3() {
     // prepare release
     clientDeploymentHelper.setProcessesToDeploy(Collections.singletonList(HelloWorldProcessV2.class));
     clientDeploymentHelper.setWorkItemHandlersToDeploy(Collections.singletonList(HelloWorldWorkItemHandler.class));
@@ -67,7 +67,7 @@ public class ProcessMigrationTest extends AbstractProcessTest {
     clientDeploymentHelper.deploy(true);
   }
 
-  public void prepareDeployment4(String oldContainerId) {
+  private void prepareDeployment4(String oldContainerId) {
     // prepare release
     clientDeploymentHelper.setProcessesToDeploy(Collections.singletonList(HelloWorldProcessV3.class));
     clientDeploymentHelper.setWorkItemHandlersToDeploy(Collections.singletonList(HelloWorldWorkItemHandler.class));
