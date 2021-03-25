@@ -393,7 +393,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     if (container != null) {
       // if the container is unhealthy we must fix this first by re-deploy it.
       if (!container.getStatus().equals(KieContainerStatus.STARTED) && cancelAllRunningInstances) {
-        LOGGER.error("Error while aborting Process Instances: KIE Container {} is in status {} which does not allow aborts of process instances", containerId, container.getStatus().name());
+        LOGGER.warn("Error while aborting Process Instances: KIE Container {} is in status {} which does not allow aborts of process instances", containerId, container.getStatus().name());
         return false;
       }
 
