@@ -54,7 +54,7 @@ public class ProcessBuilder {
 
       // give any process model node a unique id for later process migrations
       for (Node node : process.getNodes()) {
-        node.getMetaData().put("UniqueId", "_jbpm-unique-" + node.getId());
+        node.getMetaData().put("UniqueId", String.valueOf(node.getId()));
       }
 
       // layout the process model nodes
