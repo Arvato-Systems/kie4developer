@@ -41,7 +41,7 @@ public class JarUploader {
    * @return the http response
    */
   public ResponseEntity<String> uploadFile(File file, String url) {
-    LOGGER.debug("uploading '{}' to '{}'", file.getAbsolutePath(), url);
+    LOGGER.debug("Uploading '{}' to '{}'", file.getAbsolutePath(), url);
     // Build header with basic auth & file upload http content type
     HttpHeaders headers = buildAuthHeader();
     // add the file to request
