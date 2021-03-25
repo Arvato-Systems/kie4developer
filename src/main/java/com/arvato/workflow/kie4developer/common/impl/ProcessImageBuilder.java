@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.w3c.dom.svg.SVGDocument;
 
 /**
@@ -141,14 +142,39 @@ public class ProcessImageBuilder {
         LOGGER.error(String.format("unsupported node with id '%s' on process with id '%s'", node.getId(), process.getId()));
       }
 
+      // add node id's
       Element rootG = document.createElement("g");
       rootG.setAttribute("id", String.valueOf(id));
       rootG.setAttribute("bpmn2nodeid", String.valueOf(id));
-      Element NodeG = (Element) svgGenerator.getRoot().getLastChild().getLastChild();
-      NodeG.setAttribute("id", id + "?shapeType=BORDER&amp;renderType=STROKE");
 
-      //_A55A369D-0FC6-437D-A723-1DEE2BDF3912?shapeType=BACKGROUND
-      rootG.appendChild(NodeG);
+      // add marker for highlighting of active nodes
+      Element nodeG = (Element) svgGenerator.getRoot().getLastChild().getLastChild();
+      NodeList rectangles = nodeG.getElementsByTagName("rect");
+      if (rectangles.getLength() > 0){
+        Element shape = (Element) rectangles.item(0);
+        shape.setAttribute("id", id + "?shapeType=BORDER&amp;renderType=STROKE");
+      }
+      NodeList circles = nodeG.getElementsByTagName("circle");
+      if (circles.getLength() > 0){
+        Element shape = (Element) circles.item(0);
+        shape.setAttribute("id", id + "?shapeType=BORDER&amp;renderType=STROKE");
+      }
+      rootG.appendChild(nodeG);
+
+      // add marker for highlighting of completed nodes
+      nodeG = (Element) nodeG.cloneNode(true);
+      rectangles = nodeG.getElementsByTagName("rect");
+      if (rectangles.getLength() > 0){
+        Element shape = (Element) rectangles.item(0);
+        shape.setAttribute("id", id + "?shapeType=BACKGROUND");
+      }
+      circles = nodeG.getElementsByTagName("circle");
+      if (circles.getLength() > 0){
+        Element shape = (Element) circles.item(0);
+        shape.setAttribute("id", id + "?shapeType=BACKGROUND");
+      }
+      rootG.appendChild(nodeG);
+
       elements.add(rootG);
     }
     imgWidth+=100;
