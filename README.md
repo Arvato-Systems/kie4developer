@@ -1,7 +1,7 @@
 KIE4Developer - Work with KIE the easy way
 ========================================
 
-This project represents a KIE Workflow Project. You can build and deploy Workflow to an internal or external JBPM KIE Server (BICCW).
+Library for creating and deploying JBPM workflows using Java.
 - Create BPMN Processes (Process Definitions) as simple Java classes with fluent API or use existing .bpmn xml files
 - Use simple Java classes for executing business logic in service tasks
 - Unittest the BPMN Processes with JUnit
