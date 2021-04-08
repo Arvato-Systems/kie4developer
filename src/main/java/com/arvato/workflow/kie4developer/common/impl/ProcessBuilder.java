@@ -52,9 +52,9 @@ public class ProcessBuilder {
       // validate process model
       RuleFlowProcess process = factory.validate().getProcess();
 
-      // give any process model node a unique id for later process migrations
+      // give any process model node a unique id with prefix for later process migrations
       for (Node node : process.getNodes()) {
-        node.getMetaData().put("UniqueId", String.valueOf(node.getId()));
+        node.getMetaData().put("UniqueId", "_jbpm-unique-" + node.getId());
       }
 
       // layout the process model nodes
@@ -94,6 +94,14 @@ public class ProcessBuilder {
     return resList;
   }
 
+  // space between elements
+  static final int DEFAULT_SPACE_X = 70;
+  static final int DEFAULT_SPACE_Y = 70;
+
+  // start position
+  static final int START_X = 100;
+  static final int START_Y = 100;
+
   /**
    * Auto layout the process model nodes of a given process
    *
@@ -119,14 +127,6 @@ public class ProcessBuilder {
     final int gatewayOffsetY = (maxHeight - gatewayHeight) / 2;
     final int activityOffsetY = (maxHeight - activityHeight) / 2;
 
-    // space between elements
-    final int defaultSpaceX = 70;
-    final int defaultSpaceY = 70;
-
-    // start position
-    final int startX = 100;
-    final int startY = 100;
-
     // calculation coordinates
     int x;
     int y;
@@ -136,12 +136,12 @@ public class ProcessBuilder {
 
     // let's build the left-to-right graph
     numberOfOpenGateways = 0;
-    x = startX;
-    y = startY;
+    x = START_X;
+    y = START_Y;
     for (int i = 0; process.getNodes().length > i; i++) {
       Node node = process.getNodes()[i];
-      offsetX = defaultSpaceX;
-      offsetY = numberOfOpenGateways * defaultSpaceY;
+      offsetX = DEFAULT_SPACE_X;
+      offsetY = numberOfOpenGateways * DEFAULT_SPACE_Y;
 
       if (node instanceof StartNode || node instanceof EndNode || node instanceof TimerNode || node instanceof EventNode) {
         height = eventHeight;
@@ -156,7 +156,7 @@ public class ProcessBuilder {
           numberOfOpenGateways++;
         } else {
           numberOfOpenGateways--;
-          offsetY -= defaultSpaceY; //works not for deeper nested branches
+          offsetY -= DEFAULT_SPACE_Y; //works not for deeper nested branches
         }
       } else if (node instanceof ActionNode || node instanceof WorkItemNode || node instanceof HumanTaskNode
           || node instanceof SubProcessNode) {
