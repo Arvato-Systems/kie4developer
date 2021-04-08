@@ -54,7 +54,8 @@ public class ProcessImageBuilder {
   }
 
   /**
-   * Create the process model image (SVG) of a given process src for icons: https://iconify.design/icon-sets/bpmn/
+   * Create the process model image (SVG) of a given process.
+   * Source for icons: https://iconify.design/icon-sets/bpmn/
    *
    * @param process the process model to use
    * @return the image
@@ -71,8 +72,10 @@ public class ProcessImageBuilder {
     int imgHeight = 0;
 
     List<Element> elements = new ArrayList<>();
+
     for (Node node : process.getNodes()) {
-      long id = node.getId();
+      String id = (String) node.getMetaData().get("UniqueId");
+      String name = node.getName() == null ? "" : node.getName();
       int x = (int) node.getMetaData().get("x");
       int y = (int) node.getMetaData().get("y");
       int width = (int) node.getMetaData().get("width");
@@ -80,7 +83,6 @@ public class ProcessImageBuilder {
       imgWidth = Integer.max(imgWidth, x);
       imgHeight = Integer.max(imgHeight, y);
 
-      //TODO: use specified connection waypoints from XML & show names
       for (List<Connection> connections : node.getOutgoingConnections().values()) {
         for (Connection connection : connections) {
           int x1 = (int) connection.getFrom().getMetaData().get("x");
@@ -89,13 +91,19 @@ public class ProcessImageBuilder {
           int height1 = (int) connection.getFrom().getMetaData().get("height");
           int x2 = (int) connection.getTo().getMetaData().get("x");
           int y2 = (int) connection.getTo().getMetaData().get("y");
-          //int width2 = (int) connection.getTo().getMetaData().get("width");
+//          int width2 = (int) connection.getTo().getMetaData().get("width");
           int height2 = (int) connection.getTo().getMetaData().get("height");
-          drawEdge(svgGenerator, x1 + width1, y1 + (height1 / 2), x2, y2 + (height2 / 2), "");
+
+          // adjust to relative size
+          x2 = x2 - x1;
+          x1 = 0;
+          y2 = y2 - y1;
+          y1 = 0;
+
+          drawEdge(svgGenerator, x1 + width1, y1 + (height1 / 2), x2, y2 + (height2 / 2), ""); //TODO: show connection label
         }
       }
 
-      String name = node.getName() == null ? "" : node.getName();
       if (node instanceof StartNode || node instanceof EndNode || node instanceof TimerNode || node instanceof EventNode) {
         String type = null;
         if (node instanceof StartNode) {
@@ -107,7 +115,7 @@ public class ProcessImageBuilder {
         } else if (node instanceof EndNode) {
           type = "end";
         }
-        drawEvent(svgGenerator, x, y, width, height, name, type);
+        drawEvent(svgGenerator, 0, 0, width, height, name, type);
       } else if (node instanceof Join || node instanceof Split) {
         String type = null;
         if (node instanceof Join) {
@@ -125,7 +133,7 @@ public class ProcessImageBuilder {
             type = "xor";
           }
         }
-        drawGateway(svgGenerator,x, y, width, height, name, type);
+        drawGateway(svgGenerator,0, 0, width, height, name, type);
       } else if (node instanceof ActionNode || node instanceof WorkItemNode || node instanceof HumanTaskNode || node instanceof SubProcessNode) {
         String type = null;
         if (node instanceof ActionNode) {
@@ -137,15 +145,17 @@ public class ProcessImageBuilder {
         } else if (node instanceof SubProcessNode) {
           type = "call";
         }
-        drawActivity(svgGenerator, x, y, width, height, name, type);
+        drawActivity(svgGenerator, 0, 0, width, height, name, type);
       } else {
         LOGGER.error(String.format("unsupported node with id '%s' on process with id '%s'", node.getId(), process.getId()));
       }
 
-      // add node id's
+      // add a 'g' element that represents the node
       Element rootG = document.createElement("g");
-      rootG.setAttribute("id", String.valueOf(id));
-      rootG.setAttribute("bpmn2nodeid", String.valueOf(id));
+      rootG.setAttribute("id", id);
+      rootG.setAttribute("bpmn2nodeid", id );
+      // move to right position
+      rootG.setAttribute("transform","translate("+x+" "+y+")");
 
       // add marker for highlighting of active nodes
       Element nodeG = (Element) svgGenerator.getRoot().getLastChild().getLastChild();

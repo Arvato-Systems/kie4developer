@@ -73,7 +73,7 @@ public class ProcessMigrationTest extends AbstractProcessTest {
     clientDeploymentHelper.setWorkItemHandlersToDeploy(Collections.singletonList(HelloWorldWorkItemHandler.class));
     // deploy release
     List<MigrationReportInstance> migrationReport = clientDeploymentHelper.deployWithMigration(oldContainerId);
-    Assert.assertTrue("Migration was successful", !migrationReport.get(0).isSuccessful());
+    Assert.assertFalse("Migration was successful", migrationReport.get(0).isSuccessful());
   }
 
   @Test
