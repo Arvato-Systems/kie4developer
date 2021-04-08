@@ -82,12 +82,13 @@ How to implement your own workflow solution
 ------------------------------
 
 All general projects settings are taken from the maven [pom.xml](pom.xml) file.
+
 Advanced configuration of your project is done within [application.properties](src/main/resources/application.properties) file.
 
-Add BPMN Process Model classes by implementing the ```IDeployableBPMNProcess``` Interface. Store them in the package ```com.example.workflow.processes```.
-Add required dependencies by add them into  ```pom.xml```.
-Create Service classes that runs your business logic by providing the default constructur and store them in the package ```com.example.workflow.services```.
-If you use custom classes within your process models make sure these implements ```Serializable``` for marshalling support.
-Add own WorkItemHandler by implementing the ```IDeployableWorkItemHandler``` Interface. Store them in the package ```com.example.workflow.workitemhandler```.
+- Add BPMN Process Model classes by implementing the ```IDeployableBPMNProcess``` Interface. Store them in the package ```com.example.workflow.processes```.
+- Add required dependencies by add them into  ```pom.xml```.
+- Create Service classes that runs your business logic by providing the default constructur and store them in the package ```com.example.workflow.services```.
+- If you use custom classes within your process models make sure these implements ```Serializable``` for marshalling support.
+- Add own WorkItemHandler by implementing the ```IDeployableWorkItemHandler``` Interface. Store them in the package ```com.example.workflow.workitemhandler```.
 
 Check out many examples within the ```test``` directory.
