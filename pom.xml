@@ -10,9 +10,10 @@
 
 	<groupId>com.arvato.workflow</groupId>
 	<artifactId>kie4developer</artifactId>
+	<!-- use the same version as JBPM to show compliance -->
 
 	<name>KIE4Developer</name>
-	<description>Template Project to easily create KIE Workflow Projects and deploy them to a KIE Server</description>
+	<description>Library for creating and deploying JBPM workflows using plain Java</description>
 
 	<properties>
 		<start-class>com.arvato.workflow.kie4developer.KIE4DeveloperApplication</start-class>
@@ -59,7 +60,7 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
-		<!-- extra dependencies for swagger -->
+		<!-- Extra dependencies for swagger support -->
 		<dependency>
 			<groupId>org.webjars</groupId>
 			<artifactId>swagger-ui</artifactId>
@@ -81,7 +82,7 @@
 			</exclusions>
 		</dependency>
 
-		<!-- BPM fluent api lib -->
+		<!-- BPM fluent API lib -->
 		<dependency>
 			<groupId>org.jbpm</groupId>
 			<artifactId>jbpm-flow</artifactId>
@@ -98,7 +99,7 @@
 			<version>1.13</version>
 		</dependency>
 
-		<!-- test dependencies -->
+		<!-- Test dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -130,6 +131,7 @@
 				<activeByDefault>true</activeByDefault>
 			</activation>
 			<dependencies>
+				<!-- In Memory DB for testing -->
 				<dependency>
 					<groupId>com.h2database</groupId>
 					<artifactId>h2</artifactId>
