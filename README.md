@@ -1,10 +1,11 @@
 KIE4Developer - Work with KIE the easy way
 ========================================
 
-Library for creating and deploying JBPM workflows using Java.
-- Create BPMN Processes (Process Definitions) as simple Java classes with fluent API or use existing .bpmn xml files
+Library for creating and deploying [JBPM](https://www.jbpm.org) workflows using [Java](https://java.com).
+
+- Create BPMN Processes (Process Definitions) as simple Java classes with fluent API or use existing .bpmn xml-files
 - Use simple Java classes for executing business logic in service tasks
-- Unittest the BPMN Processes with JUnit
+- Unittest the BPMN Processes with JUnit on your local system
 - Package a release with all dependencies as single self-executable jar artifact
 - Deploy to a KIE Server with selectable deployment strategies e.g. overwrite or migration
 
@@ -16,7 +17,7 @@ Complete configuration via [application.properties](src/main/resources/applicati
 You can either use the included KIE Server as deploy target and runtime (default) or connect to a remote KIE Server via following properties:
 ```
 kieserver.protocol=http
-kieserver.host=localhost
+kieserver.host=externalhost
 kieserver.port=8180
 kieserver.user=kieserver
 kieserver.pwd=kieserver1!
@@ -37,7 +38,7 @@ How to build it
 
 Ensure that the default installed java version in the environment is JDK 8.
 
-To create your Spring Boot fat jar just run `mvn:package`. Use `mvn:package deploy` for uploading your artifact to the repository server.
+To create your Spring Boot fat jar just run `mvn:install`.
 
 To start the application direct on the target-system just run `java -jar workflow-processes-example-7.23.0.Final-SNAPSHOT.jar`.
 
@@ -52,7 +53,7 @@ You can run the application by simply starting
 mvn clean spring-boot:run
 ```
 
-If you like to use the KIE Server REST API (hint: the main method contains a shutdown that you may want to remove):
+If you like to use the KIE Server REST API:
 
 ```
 # URL & Credentails (start-up takes some time...):
@@ -84,6 +85,16 @@ How to implement your own workflow solution
 All general projects settings are taken from the maven [pom.xml](pom.xml) file.
 
 Advanced configuration of your project is done within [application.properties](src/main/resources/application.properties) file.
+
+If you don't want to add your BPMN Process models directly into this project your can add the kie4developer as dependency to your maven project:
+```
+ <dependency>
+      <groupId>com.arvato.workflow</groupId>
+      <artifactId>kie4developer</artifactId>
+      <version>7.23.0.Final</version>
+      <scope>provided</scope>
+ </dependency>
+```
 
 - Add BPMN Process Model classes by implementing the ```IDeployableBPMNProcess``` Interface. Store them in the package ```com.example.workflow.processes```.
 - Add required dependencies by add them into  ```pom.xml```.
