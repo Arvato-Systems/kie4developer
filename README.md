@@ -4,7 +4,7 @@ KIE4Developer - Work with KIE the easy way
 Library for creating and deploying [JBPM](https://www.jbpm.org) workflows using [Java](https://java.com).
 
 - Create BPMN Processes (Process Definitions) as simple Java classes with fluent API or use existing .bpmn xml-files
-- Use simple Java classes for executing business logic in service tasks
+- Write simple Java classes for executing business logic in service tasks
 - Unittest the BPMN Processes with JUnit on your local system
 - Package a release with all dependencies as single self-executable jar artifact
 - Deploy to a KIE Server with selectable deployment strategies e.g. overwrite or migration
@@ -12,12 +12,13 @@ Library for creating and deploying [JBPM](https://www.jbpm.org) workflows using 
 How to configure it[](how-to-configure-it)
 ------------------------------
 
+You can use KIE4Developer to build and deploy your own workflow solutions.
+On startup a deployment unit (kjar) for the JBPM Runtime is generated which can be executed on the embedded KIE Server (default) or on a remote Server.
+
 Complete configuration is done via [application.properties](src/main/resources/application.properties) file.
 
-You can use this lib as runtime target (included KIE Server -> default) or as vehicle for deloyments on a remote KIE Server.
-
 To use a remote server just configure the connection properties to a non-local server via following properties:
-```
+```properties
 kieserver.protocol=http
 kieserver.host=externalhost
 kieserver.port=8180
@@ -26,7 +27,7 @@ kieserver.pwd=kieserver1!
 ```
 
 When connect to a remote KIE Server you need a remote KIE Workbench (alias Business Central) as well which can be connected via following properties:
-```
+```properties
 kieworkbench.protocol=http
 kieworkbench.host=localhost
 kieworkbench.port=8080
@@ -40,50 +41,40 @@ How to build it
 
 Ensure that the default installed java version in the environment is JDK 8.
 
-To create the kie4developer jar run `mvn:install`.
+To create the KIE4Developer jar run `mvn:install`.
 
 How to run it
 ------------------------------
 
 Please read the chapter [How to configure it](#how-to-configure-it) first.
 
-You can run the application by simply starting
+You can run the application by simply starting `mvn clean spring-boot:run`.
 
-```
-mvn clean spring-boot:run
-```
-
-If you like to use the KIE Server REST API:
-
-```
-# URL & Credentails (start-up takes some time...):
-# Swagger UI: http://localhost:8180/kie-server/services/rest/api-docs?url=/kie-server/services/rest/swagger.json
-# http://localhost:8180/kie-server/services/rest/server
-# kieserver/kieserver1!
-```
+If you like to use the KIE Server REST API of the embedded KIE Server you can access it via Swagger UI:
+http://localhost:8180/kie-server/services/rest/api-docs?url=/kie-server/services/rest/swagger.json with these credentials: `kieserver`/`kieserver1!`
 
 If you like to work with external KIE Server and Business Central please run this separately.
 E.g. use the existing docker images of [business-central-workbench-showcase](https://hub.docker.com/r/jboss/business-central-workbench-showcase) and [kie-server-showcase](https://hub.docker.com/r/jboss/kie-server-showcase):
 
-```
+```shell
 # Run Business Central
 docker run -p 8080:8080 -p 8001:8001 -d --name jbpm-workbench jboss/business-central-workbench-showcase:7.23.0.Final
-# URL & Credentails (start-up takes some time...):
-# http://localhost:8080/business-central
-# admin/admin
+# URL & Credentials (start-up takes some time...):
+# - http://localhost:8080/business-central
+# - admin/admin
 
 # Run KIE-Server
 docker run -p 8180:8080 -d --env "JAVA_OPTS=-Xms256m -Xmx1024m -Djava.net.preferIPv4Stack=true -Dorg.kie.server.bypass.auth.user=true" --name kie-server --link jbpm-workbench:kie-wb jboss/kie-server-showcase:7.23.0.Final
-# URL & Credentails (start-up takes some time...):
-# http://localhost:8180/kie-server/docs/
-# kieserver/kieserver1!
+# URL & Credentials (start-up takes some time...):
+# - http://localhost:8180/kie-server/docs/
+# - kieserver/kieserver1!
 ```
 
 How to implement your own workflow solution
 ------------------------------
 
-Add the kie4developer lib as maven dependency to your project:
-```
+Add the KIE4Developer lib as dependency to your maven project:
+```xml
  <!-- attention: not hosted within maven central -->
  <dependency>
     <groupId>com.arvato.workflow</groupId>
@@ -105,12 +96,12 @@ Add the kie4developer lib as maven dependency to your project:
  </dependency>
 ```
 
-Add the plugin to create the executable Spring Boot fat jar
-```
+Add the plugin to create the executable Spring Boot fat jar:
+```xml
   <build>
     <plugins>
+      <!-- create a executable jar and a jar with dependencies to use in child-projects -->
       <plugin>
-        <!-- create a executable jar and a jar with dependencies to use in child-projects -->
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>${version.org.spring-boot}</version>
@@ -131,7 +122,7 @@ Add the plugin to create the executable Spring Boot fat jar
 ```
 
 Write a simple startup class that triggers the deployment:
-```
+```java
 /**
  * Example Workflow Application (powered by KIE4Developer)
  */
@@ -190,3 +181,22 @@ To create your release as Spring Boot fat jar just run `mvn:install`.
 To run the app / trigger the deployment just run `java -jar example-1.0.0-SNAPSHOT-exec.jar`.
 
 You can overwrite properties directly on the command line e.g.: `java -jar example-1.0.0-SNAPSHOT-exec.jar --spring.application.autodeploy=true --spring.application.autodeploy.overwrite=true`.
+
+Licence
+------------------------------
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+KIE4Developer makes use of following third party libraries:
+- kie-server-spring-boot-starter [Apache 2.0 License]
+- kie-server-client [Apache 2.0 License]
+- jbpm-flow [Apache 2.0 License]
+- jbpm-bpmn2 [Apache 2.0 License]
+- tomcat-jdbc [Apache 2.0 License]
+- spring-boot-starter-security [Apache 2.0 License]
+- swagger-ui [Apache 2.0 License]
+- cxf-rt-rs-service-description-swagger [Apache 2.0 License]
+- batik-all [Apache 2.0 License]
+- h2 [Eclipse Public License 1.0]
+- spring-boot-starter-test [Apache 2.0 License]
+- mockito-core [MIT License]
+- junit [Eclipse Public License 1.0]
