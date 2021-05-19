@@ -124,6 +124,7 @@ public class ProcessBuilder {
    */
   private static void layoutElements(RuleFlowProcess process) {
     LOGGER.debug("Layouting process with id '{}'", process.getId());
+    //TODO: Support attached Events
     //TODO: Layout more pretty.
     int height = 38;
     int width = 38;
