@@ -49,6 +49,7 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
 
   @Override
   public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
+    Map<String, Object> castedResult = null;
     String className = (String) getProcessVariableOrThrowException(workItem, "className");
     String methodName = (String) getProcessVariableOrThrowException(workItem, "methodName");
     String parameterType = (String) workItem.getParameters().get("methodParameterType"); // optional
@@ -86,10 +87,9 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
       }
       Method method = c.getMethod(methodName, methodParameterTypes);
       Object result = method.invoke(instance, params);
-      Map<String, Object> castedResult = (Map<String, Object>) result;
+      castedResult = (Map<String, Object>) result;
       LOGGER.info("Executing Java class {} with method {} was successful. Result is: {}.", className, methodName,
           castedResult);
-      manager.completeWorkItem(workItem.getId(), castedResult);
     } catch (NoClassDefFoundError e) {
       LOGGER.error("Class {} could not be instantiated. "
           + "Please verify that no action blocks the class instantiation via default constructor.", className, e);
@@ -107,6 +107,7 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
       LOGGER.error("Method {} in class {} throws an unexpected Exception.", methodName, className, e);
       handleException(workItem, manager, e, errorHandingProcessId);
     }
+    manager.completeWorkItem(workItem.getId(), castedResult);
   }
 
   @Override
