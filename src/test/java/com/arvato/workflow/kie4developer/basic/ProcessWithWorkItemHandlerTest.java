@@ -169,7 +169,7 @@ public class ProcessWithWorkItemHandlerTest extends AbstractProcessTest {
             executionErrorInstance.getActivityName());
         Assert.assertNotNull("ProcessInstanceId was not found", executionErrorInstance.getProcessInstanceId());
         Assert.assertEquals("[SupportTicketProcess:" + executionErrorInstance.getProcessInstanceId()
-                + " - execute business logic:5] -- java.lang.reflect.InvocationTargetException",
+                + " - execute business logic:5] -- java.lang.reflect.InvocationTargetException: com.arvato.workflow.kie4developer.migration.BrokenExampleService#doIt",
             executionErrorInstance.getErrorMessage());
 
         ExecutionErrorInstance executionErrorInstanceDetails = kieClient.getProcessAdminClient()
@@ -241,7 +241,7 @@ public class ProcessWithWorkItemHandlerTest extends AbstractProcessTest {
             executionErrorInstance.getActivityName());
         Assert.assertNotNull("ProcessInstanceId was not found", executionErrorInstance.getProcessInstanceId());
         Assert.assertEquals("[SupportTicketProcess:" + executionErrorInstance.getProcessInstanceId()
-                + " - execute business logic:5] -- java.lang.reflect.InvocationTargetException",
+                + " - execute business logic:5] -- java.lang.reflect.InvocationTargetException: com.arvato.workflow.kie4developer.migration.BrokenExampleService#doIt",
             executionErrorInstance.getErrorMessage());
 
         ExecutionErrorInstance executionErrorInstanceDetails = kieClient.getProcessAdminClient()

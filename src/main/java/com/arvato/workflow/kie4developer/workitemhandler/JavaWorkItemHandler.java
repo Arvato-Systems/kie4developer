@@ -40,7 +40,7 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(JavaWorkItemHandler.class);
   private final String VERSION = "1.0.0";
   private int retries = 0;
-  private final int MAX_RETRIES = 0;
+  private final int MAX_RETRIES = (System.getProperty("spring.application.retries") == null ? 0 : Integer.parseInt(System.getProperty("spring.application.retries")));
 
   @Override
   public String getVersion() {
@@ -49,6 +49,7 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
 
   @Override
   public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
+    String detailErrorMsg = null;
     Map<String, Object> castedResult = null;
     String className = (String) getProcessVariableOrThrowException(workItem, "className");
     String methodName = (String) getProcessVariableOrThrowException(workItem, "methodName");
@@ -58,12 +59,9 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
 
     if (LOGGER.isDebugEnabled()) {
       // curl -X GET "http://{host}:{port}/kie-server/services/rest/server/containers/{containerid}/processes/instances/{processinstanceid}/variable/methodParameter" -H "accept: application/json"
-      LOGGER
-          .debug("Try to execute Java Class {} with method {} with parameter type {} and parameter value {}.",
-              className,
-              methodName, parameterType, parameter);
+      LOGGER.debug("Try to execute Java class {} with method {} with parameter type {} and parameter value {}.", className, methodName, parameterType, parameter);
     } else {
-      LOGGER.info("Try to execute Java Class {} with method {}.", className, methodName);
+      LOGGER.info("Try to execute Java class {} with method {}.", className, methodName);
     }
 
     try {
@@ -88,25 +86,29 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
       Method method = c.getMethod(methodName, methodParameterTypes);
       Object result = method.invoke(instance, params);
       castedResult = (Map<String, Object>) result;
-      LOGGER.info("Executing Java class {} with method {} was successful. Result is: {}.", className, methodName,
-          castedResult);
-    } catch (NoClassDefFoundError e) {
-      LOGGER.error("Class {} could not be instantiated. "
-          + "Please verify that no action blocks the class instantiation via default constructor.", className, e);
-      handleException(workItem, manager, e, errorHandingProcessId);
-    } catch (InvocationTargetException | RuntimeException e) {
-      LOGGER.error(
-          "Runtime Error while execute Java class {} with method {} with parameter type {} and parameter value {}.",
-          className, methodName, parameterType, parameter, e);
-      handleException(workItem, manager, e, errorHandingProcessId);
-    } catch (ReflectiveOperationException e) {
-      LOGGER.error("Class {} or method {} could not be found or instantiated. "
-          + "Please verify the existence of a default constructor and method.", className, methodName, e);
-      handleException(workItem, manager, e, errorHandingProcessId);
-    } catch (Exception e) {
-      LOGGER.error("Method {} in class {} throws an unexpected Exception.", methodName, className, e);
-      handleException(workItem, manager, e, errorHandingProcessId);
+
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Executing Java class {} with method {} was successful. Result is: {}.", className, methodName, castedResult);
+      } else {
+        LOGGER.info("Executing Java class {} with method {} was successful.", className, methodName);
+      }
+    } catch (NoClassDefFoundError | Exception e){
+      if (e.getClass().equals(NoClassDefFoundError.class)){
+        detailErrorMsg = String.format("Class %s could not be instantiated. Please verify that no action blocks the class instantiation via default constructor.", className);
+      } else if (e.getClass().equals(RuntimeException.class) || e.getClass().equals(InvocationTargetException.class)){
+        detailErrorMsg = String.format("Runtime Error while execute Java class %s with method %s with parameter type %s and parameter value %s.", className, methodName, parameterType, parameter);
+      } else if (e.getClass().equals(ReflectiveOperationException.class)){
+        detailErrorMsg = String.format("Class %s or method %s could not be found or instantiated. Please verify the existence of a default constructor and method.", className, methodName);
+      } else if (e.getClass().equals(Exception.class)){
+        detailErrorMsg = String.format("Method %s in class %s throws an unexpected Exception.", methodName, className);
+      }
+      Exception detailError = new InvocationTargetException(e, detailErrorMsg);
+      // wrap in a shortened error message otherwise database storage operation fails because of too much text
+      String shortErrorMsg = String.format("%s#%s", className, methodName);
+      Exception shortError = new InvocationTargetException(detailError, shortErrorMsg);
+      handleException(workItem, manager, shortError, errorHandingProcessId);
     }
+
     manager.completeWorkItem(workItem.getId(), castedResult);
   }
 
@@ -138,8 +140,7 @@ public class JavaWorkItemHandler implements IDeployableWorkItemHandler {
       executeWorkItem(workItem, manager);
     } else if (errorHandingProcessId != null) {
       LOGGER.info("Starting error handling subprocess {}.", errorHandingProcessId);
-      throw new ProcessWorkItemHandlerException(errorHandingProcessId, HandlingStrategy.COMPLETE,
-          cause);  // error gets handled by separate error handling subprocesses
+      throw new ProcessWorkItemHandlerException(errorHandingProcessId, HandlingStrategy.COMPLETE, cause); // error gets handled by separate error handling subprocesses
     } else {
       throw new RuntimeException(cause);
     }

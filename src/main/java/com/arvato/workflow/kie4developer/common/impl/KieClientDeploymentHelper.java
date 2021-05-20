@@ -82,6 +82,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private int workbenchPort;
   private String workbenchContext;
   private String workbenchMavenContext;
+  private String retries;
 
   static {
     // change the optimizer to not generate negative IDs for entities on unittests and to be able to reuse db connections
@@ -102,6 +103,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
       @Value("${kieworkbench.context.maven}") String workbenchMavenContext,
       @Value("${kieserver.host}") String kieServerHost,
       @Value("${kieserver.location}") String kieServerUrl,
+      @Value("${spring.application.retries}") String retries,
       @Autowired Environment springEnv) {
     this.release = release;
     this.effectivePomReader = effectivePomReader;
@@ -128,8 +130,10 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     this.workItemHandlersToDeploy.add(JavaWorkItemHandler.class);
     this.dependenciesToDeploy = getDependencies();
     this.globals = getGlobals(springEnv);
+    this.retries = retries;
 
     System.setProperty("kieserver.location", this.kieServerUrl); // required for JavaWorkItemHandler
+    System.setProperty("spring.application.retries", this.retries); // required for JavaWorkItemHandler
   }
 
   /**
