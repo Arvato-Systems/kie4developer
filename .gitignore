@@ -1,4 +1,5 @@
 /.idea/
 /springboot-kie-server.xml
+/kie4developer.iml
 /transaction-logs/
 /target/
