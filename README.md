@@ -200,3 +200,5 @@ KIE4Developer makes use of following third party libraries:
 - [spring-boot-starter-test](https://github.com/spring-projects/spring-boot/tree/main/spring-boot-project/spring-boot-starters/spring-boot-starter-test) [[Apache 2.0 License](https://github.com/spring-projects/spring-boot/blob/main/LICENSE.txt)]
 - [mockito-core](https://github.com/mockito/mockito) [[MIT License](https://github.com/mockito/mockito/blob/main/LICENSE)]
 - [junit](https://github.com/junit-team/junit4) [[Eclipse Public License 1.0](https://github.com/junit-team/junit4/blob/main/LICENSE-junit.txt)]
+
+Please notice that third party libraries under Eclipse Public Licence 1.0 (such as junit and h2) remains licensed under Eclipse Public License 1.0; they are NOT licensed under Apache License 2.0. You can find The applicable licence text of the Eclipse Public Licence 1.0 for the libraries linked above.
