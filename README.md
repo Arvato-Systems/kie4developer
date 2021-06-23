@@ -148,13 +148,15 @@ public class WorkflowApplication extends KIE4DeveloperApplication {
     return (String... strings) -> {
       LOGGER.info("KIE4Developer Settings: Autodeploy={}, Overwrite={}, MigrationContainerId={}", autodeploy, overwrite, oldContainerId);
       boolean success = true;
-      if (autodeploy.booleanValue()) {
-        success = clientDeploymentHelper.deploy(overwrite);
-      } else if (oldContainerId != null && oldContainerId.length() > 0) {
-        for (MigrationReportInstance migrationReportInstance : clientDeploymentHelper.deployWithMigration(oldContainerId)) {
-          if (!migrationReportInstance.isSuccessful()) {
-            success = false;
+      if (autodeploy.booleanValue()){
+        if (oldContainerId != null && oldContainerId.length() > 0) {
+          for (MigrationReportInstance migrationReportInstance : clientDeploymentHelper.deployWithMigration(oldContainerId)) {
+            if (!migrationReportInstance.isSuccessful()) {
+              success = false;
+            }
           }
+        } else {
+          success = clientDeploymentHelper.deploy(overwrite);
         }
       }
       if (!success) {

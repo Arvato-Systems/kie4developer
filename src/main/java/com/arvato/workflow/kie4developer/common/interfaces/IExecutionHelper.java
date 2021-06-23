@@ -96,6 +96,7 @@ public interface IExecutionHelper {
    * @param params   the process variables
    */
   void completeTask(Long taskId, String username, Map<String, Object> params);
+  //TODO: add a optional parameter to control if the response should wait until not only the task but the whole process flow is done
 
   /**
    * Send a signal to process instance.
