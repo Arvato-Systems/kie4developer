@@ -261,10 +261,10 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
         } catch (IllegalAccessException e) {
           LOGGER.error("Error while creating new instance of class", e);
         }
-
-        // undeploy old container
-        undeploy(oldContainerId, false);
       }
+
+      // undeploy old container
+      undeploy(oldContainerId, false);
       LOGGER.info("Migration complete");
     }
     return migrationReport;
