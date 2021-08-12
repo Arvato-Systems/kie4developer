@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.StreamSupport;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.maven.model.Dependency;
 import org.appformer.maven.integration.Aether;
 import org.appformer.maven.integration.MavenRepository;
@@ -83,6 +84,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private String workbenchContext;
   private String workbenchMavenContext;
   private String retries;
+  private int migrationBatchsize;
 
   static {
     // change the optimizer to not generate negative IDs for entities on unittests and to be able to reuse db connections
@@ -104,6 +106,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
       @Value("${kieserver.host}") String kieServerHost,
       @Value("${kieserver.location}") String kieServerUrl,
       @Value("${spring.application.retries}") String retries,
+      @Value("${spring.application.migration.batchsize}") int migrationBatchsize,
       @Autowired Environment springEnv) {
     this.release = release;
     this.effectivePomReader = effectivePomReader;
@@ -131,6 +134,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     this.dependenciesToDeploy = getDependencies();
     this.globals = getGlobals(springEnv);
     this.retries = retries;
+    this.migrationBatchsize = migrationBatchsize;
 
     System.setProperty("kieserver.location", this.kieServerUrl); // required for JavaWorkItemHandler
     System.setProperty("spring.application.retries", this.retries); // required for JavaWorkItemHandler
@@ -240,21 +244,24 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
           if (processInstanceIds.isEmpty()){
             LOGGER.info("MigrationReport - no process instances exists for process {}.", instance.getName());
           } else {
-            List<MigrationReportInstance> migrationReportforProcessToDeploy = kieClient.getProcessAdminClient()
-                .migrateProcessInstances(oldContainerId, processInstanceIds,
-                    release.getContainerId(), instance.getProcessId());
+            List<List<Long>> partitions = ListUtils.partition(processInstanceIds, migrationBatchsize);
+            for (List<Long> partionOfProcessInstanceIds : partitions){
+              List<MigrationReportInstance> migrationReportforProcessToDeploy = kieClient.getProcessAdminClient()
+                  .migrateProcessInstances(oldContainerId, partionOfProcessInstanceIds,
+                      release.getContainerId(), instance.getProcessId());
 
-            for (MigrationReportInstance report : migrationReportforProcessToDeploy) {
-              if (!report.isSuccessful()) {
-                LOGGER.error("MigrationReport - failed to migrate process instance {}.\n{}",
-                    report.getProcessInstanceId(), report.getLogs());
-              } else {
-                LOGGER
-                    .info("MigrationReport - process instance {} successful migrated.", report.getProcessInstanceId());
+              for (MigrationReportInstance report : migrationReportforProcessToDeploy) {
+                if (!report.isSuccessful()) {
+                  LOGGER.error("MigrationReport - failed to migrate process instance {}.\n{}",
+                      report.getProcessInstanceId(), report.getLogs());
+                } else {
+                  LOGGER
+                      .info("MigrationReport - process instance {} successful migrated.", report.getProcessInstanceId());
+                }
               }
-            }
 
-            migrationReport.addAll(migrationReportforProcessToDeploy);
+              migrationReport.addAll(migrationReportforProcessToDeploy);
+            }
           }
         } catch (InstantiationException e) {
           LOGGER.error("Error while creating new instance of class", e);
