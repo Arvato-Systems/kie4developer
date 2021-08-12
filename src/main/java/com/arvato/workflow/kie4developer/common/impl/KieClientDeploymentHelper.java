@@ -84,7 +84,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   private String workbenchContext;
   private String workbenchMavenContext;
   private String retries;
-  private int migrationBatchsize;
+  private int chunkSize;
 
   static {
     // change the optimizer to not generate negative IDs for entities on unittests and to be able to reuse db connections
@@ -106,7 +106,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
       @Value("${kieserver.host}") String kieServerHost,
       @Value("${kieserver.location}") String kieServerUrl,
       @Value("${spring.application.retries}") String retries,
-      @Value("${spring.application.migration.batchsize}") int migrationBatchsize,
+      @Value("${spring.application.chunksize}") int chunkSize,
       @Autowired Environment springEnv) {
     this.release = release;
     this.effectivePomReader = effectivePomReader;
@@ -134,7 +134,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
     this.dependenciesToDeploy = getDependencies();
     this.globals = getGlobals(springEnv);
     this.retries = retries;
-    this.migrationBatchsize = migrationBatchsize;
+    this.chunkSize = chunkSize;
 
     System.setProperty("kieserver.location", this.kieServerUrl); // required for JavaWorkItemHandler
     System.setProperty("spring.application.retries", this.retries); // required for JavaWorkItemHandler
@@ -244,7 +244,7 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
           if (processInstanceIds.isEmpty()){
             LOGGER.info("MigrationReport - no process instances exists for process {}.", instance.getName());
           } else {
-            List<List<Long>> partitions = ListUtils.partition(processInstanceIds, migrationBatchsize);
+            List<List<Long>> partitions = ListUtils.partition(processInstanceIds, chunkSize);
             for (List<Long> partionOfProcessInstanceIds : partitions){
               List<MigrationReportInstance> migrationReportforProcessToDeploy = kieClient.getProcessAdminClient()
                   .migrateProcessInstances(oldContainerId, partionOfProcessInstanceIds,
@@ -442,7 +442,6 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
         List<ProcessInstance> processInstances = kieClient.getProcessClient()
             .findProcessInstances(containerId, 0, Integer.MAX_VALUE);
         List<Long> processInstanceIdsToAbort = new ArrayList<>();
-        int chunkSize = 100;
         for (int i = 0; i < processInstances.size(); i++) {
           if (i == chunkSize) {
             retry = true;
