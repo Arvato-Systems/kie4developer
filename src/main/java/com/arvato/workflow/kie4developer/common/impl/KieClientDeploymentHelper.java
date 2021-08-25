@@ -222,58 +222,65 @@ public class KieClientDeploymentHelper implements IDeploymentHelper {
   public List<MigrationReportInstance> deployWithMigration(String oldContainerId) {
     List<MigrationReportInstance> migrationReport = new ArrayList<>();
     if (deploy(false)) {
-      LOGGER.info("Migrating old process instances on KIE-Server...");
-      // check if we have running process instances which can be migrated
-      List<ProcessInstance> processInstances = kieClient.getProcessClient()
-          .findProcessInstances(oldContainerId, 0, Integer.MAX_VALUE);
-      List<Long> processInstanceIds;
-
-      for (Class<? extends IDeployableBPMNProcess> processesToDeploy : processesToDeploy) {
-        try {
-          IDeployableBPMNProcess instance = processesToDeploy.newInstance();
-
-          // collect all process instance ids for the process
-          processInstanceIds = new ArrayList<>();
-          for (ProcessInstance processInstance : processInstances) {
-              if (processInstance.getProcessName().equals(instance.getName())) {
-                processInstanceIds.add(processInstance.getId());
-              }
-          }
-
-          // migrate
-          if (processInstanceIds.isEmpty()){
-            LOGGER.info("MigrationReport - no process instances exists for process {}.", instance.getName());
-          } else {
-            List<List<Long>> partitions = ListUtils.partition(processInstanceIds, chunkSize);
-            for (List<Long> partionOfProcessInstanceIds : partitions){
-              List<MigrationReportInstance> migrationReportforProcessToDeploy = kieClient.getProcessAdminClient()
-                  .migrateProcessInstances(oldContainerId, partionOfProcessInstanceIds,
-                      release.getContainerId(), instance.getProcessId());
-
-              for (MigrationReportInstance report : migrationReportforProcessToDeploy) {
-                if (!report.isSuccessful()) {
-                  LOGGER.error("MigrationReport - failed to migrate process instance {}.\n{}",
-                      report.getProcessInstanceId(), report.getLogs());
-                } else {
-                  LOGGER
-                      .info("MigrationReport - process instance {} successful migrated.", report.getProcessInstanceId());
-                }
-              }
-
-              migrationReport.addAll(migrationReportforProcessToDeploy);
-            }
-          }
-        } catch (InstantiationException e) {
-          LOGGER.error("Error while creating new instance of class", e);
-        } catch (IllegalAccessException e) {
-          LOGGER.error("Error while creating new instance of class", e);
-        }
-      }
-
-      // undeploy old container
-      undeploy(oldContainerId, false);
-      LOGGER.info("Migration complete");
+      migrationReport = migrate(oldContainerId);
     }
+    return migrationReport;
+  }
+
+  @Override
+  public List<MigrationReportInstance> migrate(String oldContainerId) {
+    List<MigrationReportInstance> migrationReport = new ArrayList<>();
+    LOGGER.info("Migrating old process instances on KIE-Server...");
+    // check if we have running process instances which can be migrated
+    List<ProcessInstance> processInstances = kieClient.getProcessClient()
+        .findProcessInstances(oldContainerId, 0, Integer.MAX_VALUE);
+    List<Long> processInstanceIds;
+
+    for (Class<? extends IDeployableBPMNProcess> processesToDeploy : processesToDeploy) {
+      try {
+        IDeployableBPMNProcess instance = processesToDeploy.newInstance();
+
+        // collect all process instance ids for the process
+        processInstanceIds = new ArrayList<>();
+        for (ProcessInstance processInstance : processInstances) {
+          if (processInstance.getProcessName().equals(instance.getName())) {
+            processInstanceIds.add(processInstance.getId());
+          }
+        }
+
+        // migrate
+        if (processInstanceIds.isEmpty()){
+          LOGGER.info("MigrationReport - no process instances exists for process {}.", instance.getName());
+        } else {
+          List<List<Long>> partitions = ListUtils.partition(processInstanceIds, chunkSize);
+          for (List<Long> partionOfProcessInstanceIds : partitions){
+            List<MigrationReportInstance> migrationReportforProcessToDeploy = kieClient.getProcessAdminClient()
+                .migrateProcessInstances(oldContainerId, partionOfProcessInstanceIds,
+                    release.getContainerId(), instance.getProcessId());
+
+            for (MigrationReportInstance report : migrationReportforProcessToDeploy) {
+              if (!report.isSuccessful()) {
+                LOGGER.error("MigrationReport - failed to migrate process instance {}.\n{}",
+                    report.getProcessInstanceId(), report.getLogs());
+              } else {
+                LOGGER
+                    .info("MigrationReport - process instance {} successful migrated.", report.getProcessInstanceId());
+              }
+            }
+
+            migrationReport.addAll(migrationReportforProcessToDeploy);
+          }
+        }
+      } catch (InstantiationException e) {
+        LOGGER.error("Error while creating new instance of class", e);
+      } catch (IllegalAccessException e) {
+        LOGGER.error("Error while creating new instance of class", e);
+      }
+    }
+
+    // undeploy old container
+    undeploy(oldContainerId, false);
+    LOGGER.info("Migration complete");
     return migrationReport;
   }
 

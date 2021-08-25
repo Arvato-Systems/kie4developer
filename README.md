@@ -135,6 +135,8 @@ public class WorkflowApplication extends KIE4DeveloperApplication {
   private Boolean autodeploy;
   @Value("${spring.application.autodeploy.overwrite}")
   private Boolean overwrite;
+  @Value("${spring.application.automigrate}")
+  private Boolean automigrate;
   @Value("${spring.application.automigrate.oldContainerId}")
   private String oldContainerId;
 
@@ -146,7 +148,7 @@ public class WorkflowApplication extends KIE4DeveloperApplication {
   @Bean
   CommandLineRunner deployAndMigrateOnStart(IDeploymentHelper clientDeploymentHelper) {
     return (String... strings) -> {
-      LOGGER.info("KIE4Developer Settings: Autodeploy={}, Overwrite={}, MigrationContainerId={}", autodeploy, overwrite, oldContainerId);
+      LOGGER.info("KIE4Developer Settings: Autodeploy={}, Overwrite={}, Automigrate={}, MigrationContainerId={}", autodeploy, overwrite, automigrate, oldContainerId);
       boolean success = true;
       if (autodeploy.booleanValue()){
         if (oldContainerId != null && oldContainerId.length() > 0) {
@@ -157,6 +159,12 @@ public class WorkflowApplication extends KIE4DeveloperApplication {
           }
         } else {
           success = clientDeploymentHelper.deploy(overwrite);
+        }
+      } else if (automigrate.booleanValue() && oldContainerId != null && oldContainerId.length() > 0){
+        for (MigrationReportInstance migrationReportInstance : clientDeploymentHelper.migrate(oldContainerId)) {
+          if (!migrationReportInstance.isSuccessful()) {
+            success = false;
+          }
         }
       }
       if (!success) {
