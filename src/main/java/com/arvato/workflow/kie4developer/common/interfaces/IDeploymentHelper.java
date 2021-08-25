@@ -94,10 +94,20 @@ public interface IDeploymentHelper {
 	 * new Server Container for which a Process with the same name exist. Old Container gets undeployed
 	 * param oldContainerId old container id of process instances that should be migrated
 	 *
+	 * @param oldContainerId the container id containing the old active process instances
 	 * @return migration result reports
 	 * @see {@link MigrationReportInstance}
 	 * @see {@link IDeploymentHelper#undeploy(boolean)}
 	 */
 	List<MigrationReportInstance> deployWithMigration(String oldContainerId);
+
+	/**
+	 * Migrate all active process instances from one Server Container into another.
+	 *
+	 * @param oldContainerId the container id containing the old active process instances
+	 * @return migration result reports
+	 * @see {@link MigrationReportInstance}
+	 */
+	List<MigrationReportInstance> migrate(String oldContainerId);
 
 }
